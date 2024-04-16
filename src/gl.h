@@ -13,6 +13,7 @@
 
 #define GL_GLEXT_PROTOTYPES 1
 #include <GLES3/gl31.h>
+#include <GLES2/gl2ext.h>
 #include <EGL/egl.h>
 
 #include <stdexcept>

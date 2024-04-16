@@ -13,6 +13,8 @@
 #include "pty.h"
 #include "vterm.h"
 
+#include "Tracy.hpp"
+
 #include <cstring>
 
 namespace
@@ -704,6 +706,7 @@ namespace zutty
    int
    Vterm::writePty (VtKey key, VtModifier modifiers_, bool userInput)
    {
+      ZoneScoped;
 #ifdef DEBUG
       if (key == VtKey::Print)
       {
@@ -737,6 +740,7 @@ namespace zutty
    int
    Vterm::writePty (uint8_t ch, VtModifier modifiers, bool userInput)
    {
+      ZoneScoped;
       using VM = VtModifier;
 
       auto uch = (unsigned char*)&ch;
@@ -825,6 +829,8 @@ namespace zutty
    int
    Vterm::writePty (const uint8_t* ucstr, size_t len, bool userInput)
    {
+      ZoneScoped;
+      TracyMessage ((const char*)ucstr, len);
       if (userInput && keyboardLocked)
       {
          logT << "pty write: discarding due to keyboard lock (DECKAM): "
@@ -1018,6 +1024,8 @@ namespace zutty
    void
    Vterm::processInput (const unsigned char *const input, int inputSize)
    {
+      ZoneScoped;
+      TracyMessage ((const char*)input, inputSize);
       lastEscBegin = 0;
       lastNormalBegin = 0;
       lastStopPos = 0;

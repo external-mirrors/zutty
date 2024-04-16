@@ -38,6 +38,8 @@ def configure(cfg):
         '-Wextra',
         '-Wsign-compare',
         '-Wno-unused-parameter',
+        '-Wno-missing-field-initializers',
+        '-Wno-empty-body',
         '-DZUTTY_VERSION="{}"'.format (vsn)
         ])
 
@@ -86,6 +88,7 @@ def configure(cfg):
 
     cfg.check_cxx(header_name='EGL/egl.h')
     cfg.check_cxx(header_name='GLES3/gl31.h')
+    cfg.check_cxx(lib='GL', uselib_store='GL')
     cfg.check_cxx(lib='EGL', uselib_store='EGL')
     cfg.check_cxx(lib='GLESv2', uselib_store='GLES')
     cfg.check_cxx(lib='pthread', uselib_store='THREAD')

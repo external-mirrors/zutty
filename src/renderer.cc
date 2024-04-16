@@ -11,6 +11,9 @@
 
 #include "renderer.h"
 
+#include "Tracy.hpp"
+#include "TracyOpenGL.hpp"
+
 #include <cassert>
 
 namespace zutty
@@ -36,6 +39,7 @@ namespace zutty
    void
    Renderer::update (const Frame& frame)
    {
+      ZoneScoped;
       std::unique_lock <std::mutex> lk (mx);
       nextFrame = frame;
       nextFrame.seqNo = ++seqNo;
@@ -50,6 +54,7 @@ namespace zutty
       initDisplay ();
 
       charVdev = std::make_unique <CharVdev> (fontpk);
+      TracyGpuContext;
 
       Frame lastFrame;
       bool delta = false;
@@ -66,6 +71,8 @@ namespace zutty
          if (done)
             return;
 
+         {
+         ZoneScoped;
          if (lastFrame.seqNo + 1 != nextFrame.seqNo)
             delta = false;
 
@@ -76,6 +83,7 @@ namespace zutty
             delta = false;
 
          {
+            TracyGpuZone ("Mapping");
             CharVdev::Mapping m = charVdev->getMapping ();
             assert (m.nCols == lastFrame.nCols);
             assert (m.nRows == lastFrame.nRows);
@@ -95,11 +103,14 @@ namespace zutty
             charVdev->draw ();
             swapBuffers ();
             delta = true;
+            FrameMark;
          }
          else
          {
             // skip drawing outdated frame; force full redraw next time
             delta = false;
+         }
+         TracyGpuCollect;
          }
       }
    }

@@ -5,9 +5,11 @@ def options(opt):
     pass
 
 def configure(cfg):
-    pass
+    cfg.env.append_value('CXXFLAGS', ['-DTRACY_ENABLE=1'])
 
 def build(bld):
     src = bld.path.ant_glob('*.cc')
+    src.append (bld.path.find_node('tracy/public/TracyClient.cpp'))
     bld.program(features='cxx', source=src, target=bld.env.target,
-                use=['EGL', 'FT', 'GLES', 'THREAD', 'XMU'])
+                includes='tracy/public/tracy',
+                use=['GL', 'EGL', 'FT', 'GLES', 'THREAD', 'XMU'])

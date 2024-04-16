@@ -13,6 +13,9 @@
 #include "log.h"
 #include "options.h"
 
+#include "Tracy.hpp"
+#include "TracyOpenGL.hpp"
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -599,6 +602,7 @@ namespace zutty
    CharVdev::draw ()
    {
       assert (cells == nullptr); // no mapping in place
+      ZoneScoped;
 
       glUseProgram (P_compute);
       glActiveTexture (GL_TEXTURE0);
@@ -616,10 +620,15 @@ namespace zutty
       }
       glCheckError ();
 
+      {
+      TracyGpuZone ("Compute");
       glDispatchCompute (nCols, nRows, 1);
       glMemoryBarrier (GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
       glCheckError ();
+      }
 
+      {
+      TracyGpuZone ("Draw");
       glUseProgram (P_draw);
       glClearColor (opts.bg.red / 255.0, opts.bg.green / 255.0,
                     opts.bg.blue / 255.0, 1.0);
@@ -631,6 +640,7 @@ namespace zutty
       glEnableVertexAttribArray (A_pos);
       glEnableVertexAttribArray (A_vertexTexCoord);
       glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
+      }
    }
 
    CharVdev::Mapping::Mapping (uint16_t nCols_, uint16_t nRows_, Cell *& cells_)

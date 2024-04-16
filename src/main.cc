@@ -25,6 +25,8 @@
 #include "vterm.h"
 #include "wm_icons.h"
 
+#include "Tracy.hpp"
+
 #include <cassert>
 #include <langinfo.h>
 #include <memory>
@@ -478,6 +480,7 @@ pasteCb (bool success, const std::string& content)
 static bool
 onKeyPress (XEvent& event, XIC& xic, int ptyFd)
 {
+   ZoneScoped;
    using Key = VtKey;
    XKeyEvent& xkevt = event.xkey;
 
@@ -975,6 +978,8 @@ onMotionNotify (XMotionEvent& xmoevt)
 static bool
 x11Event (XEvent& event, XIC& xic, int ptyFd, bool& destroyed, bool& holdPtyIn)
 {
+   ZoneScoped;
+
    static bool exposed = false;
    bool redraw = false;
    destroyed = false;
