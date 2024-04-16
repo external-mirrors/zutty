@@ -107,6 +107,19 @@ namespace zutty
          br = Point ();
       }
 
+      void include (int x, int y)
+      {
+         tl.x = std::min (tl.x, x);
+         tl.y = std::min (tl.y, y);
+         br.x = std::max (br.x, x + 1);
+         br.y = std::max (br.y, y + 1);
+      }
+
+      void include (Point p)
+      {
+         include (p.x, p.y);
+      }
+
       void toggleRectangular ()
       {
          rectangular = !rectangular;

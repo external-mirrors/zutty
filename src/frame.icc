@@ -144,7 +144,7 @@ namespace zutty
       }
 #endif
       uint32_t idx = getIdx (pY, startX);
-      eraseRange (idx, idx + count, attrs);
+      eraseRange (idx, count, attrs);
       invalidateSelection (Rect (startX, pY, startX + count, pY));
    }
 
@@ -293,12 +293,12 @@ namespace zutty
    }
 
    inline void
-   Frame::eraseRange (uint32_t start, uint32_t end,
+   Frame::eraseRange (uint32_t start, uint32_t count,
                       const CharVdev::Cell& attrs)
    {
-      CharVdev::Cell* ca = &(cells.get () [start]);
-      CharVdev::Cell*const cz = ca - start + end;
-      damage.add (start, end);
+      CharVdev::Cell* ca = cells.get () + start;
+      CharVdev::Cell*const cz = ca + count;
+      damage.add (start, start + count);
       while (ca < cz)
          *ca++ = attrs;
    }

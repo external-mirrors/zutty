@@ -35,8 +35,8 @@ namespace zutty
       void resetMargins (uint16_t& marginTop_, uint16_t& marginBottom_);
 
       void fillCells (uint16_t ch, const CharVdev::Cell& attrs);
-      void fullCopyCells (CharVdev::Cell * const dest);
-      void deltaCopyCells (CharVdev::Cell * const dest);
+      Rect fullCopyCells (CharVdev::Cell * const dest);
+      Rect deltaCopyCells (CharVdev::Cell * const dest);
 
       operator bool () const { return cells != nullptr; }
       void freeCells () { cells = nullptr; }
@@ -120,12 +120,13 @@ namespace zutty
       const CharVdev::Cell & operator [] (uint32_t idx) const;
       CharVdev::Cell & operator [] (uint32_t idx);
 
-      void eraseRange (uint32_t start, uint32_t end,
+      void eraseRange (uint32_t start, uint32_t count,
                        const CharVdev::Cell& attrs);
       void copyCells (uint32_t dstIx, uint32_t srcIx, uint32_t count);
       void moveCells (uint32_t dstIx, uint32_t srcIx, uint32_t count);
 
-      void damageDeltaCopy (CharVdev::Cell* dst, uint32_t start, uint32_t count);
+      void damageDeltaCopy (CharVdev::Cell* dst, uint32_t start, uint32_t count,
+                            int pY, Rect& extent);
       void copyAllCells (CharVdev::Cell * const dest);
       void unwrapCellStorage ();
 

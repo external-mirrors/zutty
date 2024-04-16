@@ -29,6 +29,7 @@ layout (binding = 3) uniform lowp sampler2DArray atlas_dw;
 layout (binding = 4) uniform lowp sampler2D atlasMap_dw;
 uniform lowp ivec2 glyphPixels;
 uniform lowp ivec2 sizeChars;
+uniform lowp ivec2 renderOffset;
 uniform lowp ivec3 cursorColor;
 uniform lowp ivec4 cursorPos; // .xy: current; .zw: previous
 uniform lowp int cursorStyle;
@@ -53,7 +54,7 @@ layout (std430, binding = 0) buffer CharVideoMem
 
 void main ()
 {
-   ivec2 charPos = ivec2 (gl_GlobalInvocationID.xy);
+   ivec2 charPos = ivec2 (gl_GlobalInvocationID.xy) + renderOffset;
    int idx = sizeChars.x * charPos.y + charPos.x;
    Cell cell = vmem.cells[idx];
 
@@ -429,26 +430,7 @@ namespace zutty
 
       glDisable (GL_CULL_FACE);
       glDisable (GL_DEPTH_TEST);
-      glEnable (GL_BLEND);
-      glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      glCheckError ();
-
-      static const GLfloat verts[4][2] = {
-         { -1,  1 },
-         {  1,  1 },
-         { -1, -1 },
-         {  1, -1 }
-      };
-      static const GLfloat texCoords[4][2] = {
-         { 0, 0 },
-         { 1, 0 },
-         { 0, 1 },
-         { 1, 1 }
-      };
-
-      glVertexAttribPointer (A_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
-      glVertexAttribPointer (A_vertexTexCoord, 2, GL_FLOAT, GL_FALSE, 0,
-                             texCoords);
+      glDisable (GL_BLEND);
       glCheckError ();
 
       /*
@@ -568,9 +550,12 @@ namespace zutty
       glUniform3i (compU_cursorColor,
                    cursor.color.red, cursor.color.green, cursor.color.blue);
       glUniform4i (compU_cursorPos, cursor.posX, cursor.posY, prevPosX, prevPosY);
+      renderExtent.include (cursor.posX, cursor.posY);
+      renderExtent.include (prevPosX, prevPosY);
       prevPosX = cursor.posX;
       prevPosY = cursor.posY;
       glUniform1i (compU_cursorStyle, static_cast <uint8_t> (cursor.style));
+
    }
 
    void
@@ -581,6 +566,7 @@ namespace zutty
       uint32_t damageStart = nCols * damage.tl.y + damage.tl.x;
       uint32_t damageEnd = nCols * damage.br.y + damage.br.x + 1;
       prev = sel;
+      // TODO FIXME include in renderExtent
 
       glUseProgram (P_compute);
       glUniform4i (compU_selectRect, sel.tl.x, sel.tl.y, sel.br.x, sel.br.y);
@@ -593,6 +579,47 @@ namespace zutty
    {
       glUseProgram (P_compute);
       glUniform1i (compU_deltaFrame, delta ? 1 : 0);
+   }
+
+   void
+   CharVdev::setRenderExtent (const Rect& extent)
+   {
+      renderExtent = extent;
+   }
+
+   void
+   CharVdev::setupDrawTransform ()
+   {
+      float vx1 = 2.0 * renderExtent.tl.x / nCols - 1.0;
+      float vy1 = 1.0 - 2.0 * renderExtent.tl.y / nRows;
+      float vx2 = 2.0 * renderExtent.br.x / nCols - 1.0;
+      float vy2 = 1.0 - 2.0 * renderExtent.br.y / nRows;
+
+      static const GLfloat verts [4][2] =
+         { //  x   y
+            { vx1, vy1 }, // upper left
+            { vx2, vy1 }, // upper right
+            { vx1, vy2 }, // lower left
+            { vx2, vy2 }  // lower right
+         };
+
+      float tx1 = (float)renderExtent.tl.x / nCols;
+      float ty1 = (float)renderExtent.tl.y / nRows;
+      float tx2 = (float)renderExtent.br.x / nCols;
+      float ty2 = (float)renderExtent.br.y / nRows;
+
+      static const GLfloat texCoords [4][2] =
+         { // x  y
+            { tx1, ty1 },   // upper left
+            { tx2, ty1 },   // upper right
+            { tx1, ty2 },   // lower left
+            { tx2, ty2 }    // lower right
+         };
+
+      glVertexAttribPointer (A_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
+      glVertexAttribPointer (A_vertexTexCoord, 2, GL_FLOAT, GL_FALSE, 0,
+                             texCoords);
+      glCheckError ();
    }
 
    void
@@ -616,14 +643,19 @@ namespace zutty
       }
       glCheckError ();
 
-      glDispatchCompute (nCols, nRows, 1);
+      glUniform2i (compU_renderOffset, renderExtent.tl.x, renderExtent.tl.y);
+      glDispatchCompute (renderExtent.br.x - renderExtent.tl.x,
+                         renderExtent.br.y - renderExtent.tl.y, 1);
       glMemoryBarrier (GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
       glCheckError ();
 
       glUseProgram (P_draw);
+      setupDrawTransform ();
+    #if 0
       glClearColor (opts.bg.red / 255.0, opts.bg.green / 255.0,
                     opts.bg.blue / 255.0, 1.0);
       glClear (GL_COLOR_BUFFER_BIT);
+    #endif
 
       glActiveTexture (GL_TEXTURE0);
       glBindTexture (GL_TEXTURE_2D, T_output);
@@ -681,6 +713,7 @@ namespace zutty
 
       compU_glyphPixels = glGetUniformLocation (P_compute, "glyphPixels");
       compU_sizeChars = glGetUniformLocation (P_compute, "sizeChars");
+      compU_renderOffset = glGetUniformLocation (P_compute, "renderOffset");
       compU_cursorColor = glGetUniformLocation (P_compute, "cursorColor");
       compU_cursorPos = glGetUniformLocation (P_compute, "cursorPos");
       compU_cursorStyle = glGetUniformLocation (P_compute, "cursorStyle");
@@ -694,6 +727,7 @@ namespace zutty
       logT << "compute program:"
            << " uniform glyphPixels=" << compU_glyphPixels
            << " sizeChars=" << compU_sizeChars
+           << " renderOffset=" << compU_renderOffset
            << " cursorColor=" << compU_cursorColor
            << " cursorPos=" << compU_cursorPos
            << " cursorStyle=" << compU_cursorStyle

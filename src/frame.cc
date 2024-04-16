@@ -113,7 +113,7 @@ namespace zutty
       highMemUsageReport ();
    }
 
-   void
+   Rect
    Frame::fullCopyCells (CharVdev::Cell * const dst)
    {
       CharVdev::Cell* p = dst;
@@ -122,17 +122,22 @@ namespace zutty
          memcpy (p, getViewRowPtr (pY), nCols * cellSize);
          p += nCols;
       }
+
+      return Rect (0, 0, nCols, nRows);
    }
 
-   void
+   Rect
    Frame::deltaCopyCells (CharVdev::Cell * const dst)
    {
+      Rect extent (nCols, nRows, -1, -1);
       CharVdev::Cell* p = dst;
-      for (int pY = -viewOffset; pY < nRows - viewOffset; ++pY)
+      for (int pY = 0; pY < nRows; ++pY)
       {
-         damageDeltaCopy (p, nCols * getPhysicalRow (pY), nCols);
+         damageDeltaCopy (p, nCols * getPhysicalRow (pY - viewOffset), nCols,
+                          pY, extent);
          p += nCols;
       }
+      return extent;
    }
 
    Rect
@@ -264,16 +269,19 @@ namespace zutty
    // private functions
 
    inline void
-   Frame::damageDeltaCopy (CharVdev::Cell* dst, uint32_t start, uint32_t count)
+   Frame::damageDeltaCopy (CharVdev::Cell* dst, uint32_t start, uint32_t count,
+                           int row, Rect& extent)
    {
       uint32_t end = start + count;
 
       if (damage.end <= start || end <= damage.start)
          return; // no intersection
 
+      int offset = 0;
       if (start < damage.start)
       {
-         dst += (damage.start - start);
+         offset = damage.start - start;
+         dst += offset;
          start = damage.start;
       }
 
@@ -284,12 +292,14 @@ namespace zutty
 
       CharVdev::Cell* const src = cells.get ();
 
-      for (size_t i = 0, j = start; j < end; ++i, ++j)
+      int i = 0;
+      for (size_t j = start; j < end; ++i, ++j)
       {
          if (dst [i] != src [j])
          {
             dst [i] = src [j];
             dst [i].dirty = 1;
+            extent.include (offset + i, row);
          }
       }
    }

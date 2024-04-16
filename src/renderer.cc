@@ -81,9 +81,9 @@ namespace zutty
             assert (m.nRows == lastFrame.nRows);
 
             if (delta)
-               lastFrame.deltaCopyCells (m.cells);
+               charVdev->setRenderExtent (lastFrame.deltaCopyCells (m.cells));
             else
-               lastFrame.fullCopyCells (m.cells);
+               charVdev->setRenderExtent (lastFrame.fullCopyCells (m.cells));
          }
 
          charVdev->setDeltaFrame (delta);

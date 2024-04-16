@@ -44,7 +44,7 @@ namespace zutty
          uint8_t inverse: 1;
          uint8_t wrap: 1;
          uint8_t dirty: 1;
-         uint16_t _fill0: 8;
+         uint8_t _fill0;
          Color fg;
          uint8_t _fill1;
          Color bg;
@@ -108,6 +108,7 @@ namespace zutty
       void setCursor (const Cursor& cursor);
       void setSelection (const Rect& selection);
       void setDeltaFrame (bool delta);
+      void setRenderExtent (const Rect& extent);
 
    private:
       uint16_t px;
@@ -117,6 +118,7 @@ namespace zutty
       uint16_t pxWidth;
       uint16_t pxHeight;
       bool hasDoubleWidth = false;
+      Rect renderExtent;
 
       // GL ids of programs, buffers, textures, attributes and uniforms:
       GLuint P_compute, P_draw;
@@ -127,8 +129,8 @@ namespace zutty
       GLuint T_atlasMap_dw = 0;
       GLuint T_output = 0;
       GLint A_pos, A_vertexTexCoord;
-      GLint compU_glyphPixels, compU_sizeChars, compU_cursorColor;
-      GLint compU_cursorPos, compU_cursorStyle;
+      GLint compU_glyphPixels, compU_sizeChars, compU_renderOffset;
+      GLint compU_cursorColor, compU_cursorPos, compU_cursorStyle;
       GLint compU_selectRect, compU_selectRectMode, compU_selectDamage;
       GLint compU_deltaFrame, compU_showWraps, compU_hasDoubleWidth;
       GLint drawU_viewPixels;
@@ -136,6 +138,7 @@ namespace zutty
       Cell * cells = nullptr; // valid pointer if mapped, else nullptr
 
       void createShaders ();
+      void setupDrawTransform ();
    };
 
 } // namespace zutty
