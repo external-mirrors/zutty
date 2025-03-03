@@ -430,7 +430,7 @@ namespace zutty
    inline void
    Vterm::insertRows (uint16_t startY, uint16_t count)
    {
-      for (uint16_t pY = marginBottom - count - 1; pY >= startY; --pY)
+      for (int pY = marginBottom - count - 1; pY >= startY; --pY)
       {
          copyRow (pY + count, pY);
          if (!pY) break;
