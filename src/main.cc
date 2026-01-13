@@ -59,6 +59,7 @@ static Atom wmDeleteMessage;
 static XWMHints wmHints;
 static XSizeHints sizeHints;
 static Colormap colormap;
+static Time lastX11EventTime = 0;
 
 static void
 convertColor (const zutty::Color& color, XColor& xcolor)
@@ -519,7 +520,8 @@ onKeyPress (XEvent& event, XIC& xic, int ptyFd)
    }
    if (ks == XK_C && mod == VtModifier::shift_control)
    {
-      selMgr->copySelection (selMgr->getClipboard (), selMgr->getPrimary ());
+      selMgr->copySelection (selMgr->getClipboard (), selMgr->getPrimary (),
+                             xkevt.time);
       return false;
    }
    if (ks == XK_V && mod == VtModifier::shift_control)
@@ -949,7 +951,8 @@ onButtonRelease (XButtonEvent& xbevt, bool& holdPtyIn)
          selMgr->setSelection (selMgr->getPrimary (), xbevt.time, utf8_sel);
          if (opts.autoCopyMode)
             selMgr->copySelection (selMgr->getClipboard (),
-                                   selMgr->getPrimary ());
+                                   selMgr->getPrimary (),
+                                   xbevt.time);
       }
    }
    break;
@@ -1025,16 +1028,21 @@ x11Event (XEvent& event, XIC& xic, int ptyFd, bool& destroyed, bool& holdPtyIn)
       destroyed = true;
       return true;
    case KeyPress:
+      lastX11EventTime = event.xkey.time;
       return onKeyPress (event, xic, ptyFd);
    case KeyRelease:
+      lastX11EventTime = event.xkey.time;
       break;
    case ButtonPress:
+      lastX11EventTime = event.xbutton.time;
       onButtonPress (event.xbutton, holdPtyIn);
       break;
    case ButtonRelease:
+      lastX11EventTime = event.xbutton.time;
       onButtonRelease (event.xbutton, holdPtyIn);
       break;
    case MotionNotify:
+      lastX11EventTime = event.xmotion.time;
       onMotionNotify (event.xmotion);
       break;
    case FocusIn:
@@ -1048,17 +1056,21 @@ x11Event (XEvent& event, XIC& xic, int ptyFd, bool& destroyed, bool& holdPtyIn)
       vt->setHasFocus (false);
       break;
    case PropertyNotify:
+      lastX11EventTime = event.xproperty.time;
       selMgr->onPropertyNotify (event.xproperty);
       break;
    case SelectionClear:
+      lastX11EventTime = event.xselectionclear.time;
       if (event.xselectionclear.selection == selMgr->getPrimary ())
          vt->selectClear ();
       selMgr->onSelectionClear (event.xselectionclear);
       break;
    case SelectionNotify:
+      lastX11EventTime = event.xselection.time;
       selMgr->onSelectionNotify (event.xselection);
       break;
    case SelectionRequest:
+      lastX11EventTime = event.xselectionrequest.time;
       selMgr->onSelectionRequest (event.xselectionrequest);
       break;
    default:
@@ -1174,19 +1186,19 @@ handleOsc (int cmd, const std::string& arg)
                }
                else if (++it != iend)
                {
-                  selMgr->getSelection (*it, CurrentTime,
+                  selMgr->getSelection (*it, lastX11EventTime,
                                         std::move (getSelectionCb));
                }
             };
          if (it != iend)
-            selMgr->getSelection (*it, CurrentTime, std::move (getSelectionCb));
+            selMgr->getSelection (*it, lastX11EventTime, std::move (getSelectionCb));
       }
       else
       {
          for (const auto& target: targets)
          {
             std::string content = zutty::base64::decode (pd);
-            selMgr->setSelection (target, CurrentTime, content);
+            selMgr->setSelection (target, lastX11EventTime, content);
          }
       }
    }

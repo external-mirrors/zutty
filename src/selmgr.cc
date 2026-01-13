@@ -25,7 +25,8 @@ namespace zutty
       , incr (XInternAtom (dpy, "INCR", False))
       , prop (XInternAtom(dpy, "_ZUTTY_SELECTION", False))
       , target (XA_UTF8_STRING (dpy))
-      , targets (XInternAtom (dpy, "TARGETS", False))
+      , targets (XA_TARGETS (dpy))
+      , timestamp (XA_TIMESTAMP (dpy))
       , chunkSize (XExtendedMaxRequestSize (dpy)
                    ? XExtendedMaxRequestSize (dpy) >> 2
                    : XMaxRequestSize (dpy) >> 2)
@@ -39,11 +40,11 @@ namespace zutty
 
    void
    SelectionManager::getSelection (Atom selection,
-                                   Time time, PasteCallbackFn&& cb)
+                                   const Time time, PasteCallbackFn&& cb)
    {
       Context& cx = ctx [selection];
 
-      if (cx.owned)
+      if (cx.acquired > 0)
       {
          cb (true, cx.content);
          return;
@@ -57,7 +58,7 @@ namespace zutty
 
    bool
    SelectionManager::setSelection (Atom selection,
-                                   Time time, const std::string& content_)
+                                   const Time time, const std::string& content_)
    {
       Context& cx = ctx [selection];
 
@@ -65,24 +66,24 @@ namespace zutty
       if (XGetSelectionOwner (dpy, selection) == win)
       {
          cx.content = content_;
-         cx.owned = true;
+         cx.acquired = time;
       }
       else
       {
-         cx.owned = false;
+         cx.acquired = 0;
       }
-      return cx.owned;
+      return cx.acquired > 0;
    }
 
    bool
-   SelectionManager::copySelection (Atom dest, Atom source)
+   SelectionManager::copySelection (Atom dest, Atom source, const Time time)
    {
       Context& cx = ctx [source];
 
-      if (! cx.owned)
+      if (! cx.acquired)
          return false;
 
-      return setSelection (dest, CurrentTime, cx.content);
+      return setSelection (dest, time, cx.content);
    }
 
    void
@@ -98,7 +99,8 @@ namespace zutty
                           &buffer);
       XFree (buffer);
 
-      if (propSize == 0) {
+      if (propSize == 0)
+      {
          // no more data, exit from loop
          XDeleteProperty (dpy, win, prop);
          cx.state = State::Idle;
@@ -111,7 +113,7 @@ namespace zutty
       }
 
       // the property contains text of known size
-      XGetWindowProperty (dpy, win, prop, 0, propSize, False,
+      XGetWindowProperty (dpy, win, prop, 0, propSize, True,
                           AnyPropertyType, &type, &propFormat, &propItems,
                           &propSize, &buffer);
 
@@ -124,12 +126,7 @@ namespace zutty
       size_t pos = cx.incoming.size ();
       cx.incoming.resize (pos + len);
       memcpy (cx.incoming.data () + pos, buffer, len);
-
       XFree (buffer);
-
-      // delete property to get the next chunk
-      XDeleteProperty (dpy, win, prop);
-      XFlush (dpy);
    }
 
    void
@@ -137,20 +134,21 @@ namespace zutty
    {
       // Send next chunk of ongoing INCR transfer
       size_t len = std::min (chunkSize, cx.content.length () - cx.cliPos);
-      if (len > 0)
+
+      if (!len)
       {
-         logT << "Sending next INCR chunk..." << std::endl;
-         XChangeProperty (dpy, cx.cliWin, cx.cliProp, target, 8, PropModeReplace,
-                          (const unsigned char *) cx.content.data () + cx.cliPos,
-                          len);
+         logT << "Signaling end of INCR transfer..." << std::endl;
+         cx.state = State::Idle;
+         XSelectInput (dpy, cx.cliWin, 0);
       }
       else
       {
-         logT << "Signaling end of INCR transfer..." << std::endl;
-         XChangeProperty (dpy, cx.cliWin, cx.cliProp, target, 8, PropModeReplace,
-                          nullptr, 0);
-         cx.state = State::Idle;
+         logT << "Sending next INCR chunk..." << std::endl;
       }
+
+      XChangeProperty (
+         dpy, cx.cliWin, cx.cliProp, cx.cliTarget, 8, PropModeReplace,
+         (const unsigned char *) cx.content.data () + cx.cliPos, len);
       XFlush (dpy);
       cx.cliPos += len;
    }
@@ -201,7 +199,7 @@ namespace zutty
          return;
       }
 
-      ctx [event.selection].owned = false;
+      ctx [event.selection].acquired = 0;
       ctx [event.selection].content = "";
    }
 
@@ -227,7 +225,8 @@ namespace zutty
          return;
       }
 
-      if (event.property == None) {
+      if (event.property == None)
+      {
          logW << "Conversion to requested target '"
               << XGetAtomName (dpy, target) << "' failed." << std::endl;
          cx.pasteCallback (false, "");
@@ -244,7 +243,8 @@ namespace zutty
                           &type, &propFormat, &propItems, &propSize, &buffer);
       XFree (buffer);
 
-      if (type == incr) {
+      if (type == incr)
+      {
          logT << "Starting INCR by deleting property" << std::endl;
          XDeleteProperty (dpy, win, prop);
          XFlush (dpy);
@@ -253,10 +253,9 @@ namespace zutty
       }
 
       // not using INCR mechanism, just read the property
-      XGetWindowProperty (dpy, win, prop, 0, propSize, False,
+      XGetWindowProperty (dpy, win, prop, 0, propSize, True,
                           AnyPropertyType, &type, &propFormat, &propItems,
                           &propSize, &buffer);
-      XDeleteProperty (dpy, win, prop);
 
       logT << "Received data size=" << propSize
            << " format=" << propFormat
@@ -297,7 +296,7 @@ namespace zutty
          return;
       }
 
-      if (! cx.owned)
+      if (! cx.acquired)
       {
          logW << "Ignoring selection request for "
               << XGetAtomName (dpy, event.selection)
@@ -312,9 +311,15 @@ namespace zutty
 
       if (event.target == targets) // response to TARGETS request
       {
-         Atom types [2] = { targets, target };
+         Atom types [3] = { targets, timestamp, target };
          XChangeProperty (dpy, cx.cliWin, cx.cliProp, XA_ATOM, 32,
-                          PropModeReplace, (const unsigned char *) types, 2);
+                          PropModeReplace, (const unsigned char *) types, 3);
+      }
+      else if (event.target == timestamp) // response to TIMESTAMP request
+      {
+         XChangeProperty (
+            dpy, cx.cliWin, cx.cliProp, XA_INTEGER, 32, PropModeReplace,
+            (const unsigned char *) &cx.acquired, 1);
       }
       else if (chunkSize < cx.content.size ()) // INCR response
       {
@@ -323,6 +328,7 @@ namespace zutty
                           PropModeReplace, nullptr, 0);
          XSelectInput (dpy, cx.cliWin, PropertyChangeMask);
          cx.state = State::WaitingForIncrAck;
+         cx.cliTarget = event.target;
       }
       else // normal response (send all data)
       {

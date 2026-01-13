@@ -31,9 +31,9 @@ namespace zutty
       Atom getClipboard () const { return clipboard; };
 
       using PasteCallbackFn = std::function <void (bool, const std::string&)>;
-      void getSelection (Atom selection, Time, PasteCallbackFn&&);
+      void getSelection (Atom selection, const Time, PasteCallbackFn&&);
       bool setSelection (Atom selection, const Time, const std::string&);
-      bool copySelection (Atom dest, Atom source);
+      bool copySelection (Atom dest, Atom source, const Time);
 
       void onPropertyNotify (XPropertyEvent& event);
       void onSelectionClear (XSelectionClearEvent& event);
@@ -51,6 +51,7 @@ namespace zutty
       const Atom prop;
       const Atom target;
       const Atom targets;
+      const Atom timestamp;
       const size_t chunkSize;
 
       enum class State: uint8_t
@@ -63,7 +64,7 @@ namespace zutty
 
       struct Context
       {
-         bool owned = false;
+         Time acquired = 0;
          std::string content;
          PasteCallbackFn pasteCallback;
          State state = State::Idle;
@@ -75,6 +76,7 @@ namespace zutty
          size_t cliPos;
          Window cliWin;
          Atom cliProp;
+         Atom cliTarget;
       };
       std::unordered_map <Atom, Context> ctx;
 
