@@ -35,7 +35,7 @@ function INS_DEL_PGUPDN {
     IN "Control-Alt-Shift: \D1"
     IN "\C\A\S\[Delete] \C\A\S\[Page_Up] \C\A\S\[Page_Down] \D1"
 
-    SNAP keys_01 778895af5c80b2a19acc2bb2b9b048b5
+    SNAP keys_01 d8c4f6070c8ea79778e7cecf6c2b8d1b
 
     IN "\Cd\Cd\D3"
 }
@@ -62,7 +62,7 @@ function FUNCTION_KEYS {
 
     # Skip Control-Alt and Control-Alt-Shift, because it switches VT
 
-    SNAP keys_02 21b33a9ecf4d78123aa75d04ec986b7a
+    SNAP keys_02 e6419d5574f39c85d69beeb93103089b
 
     IN "\Cd\Cd\D3"
 }
@@ -95,7 +95,7 @@ function CURSOR_KEYS {
     IN "Control-Alt-Shift: \D1"
     IN "\C\A\S\[Up] \C\A\S\[Down] \C\A\S\[Right] \C\A\S\[Left] \C\A\S\[Home] \C\A\S\[End] \n \D2"
 
-    SNAP keys_03 f1a4d62a34b3a9cbbc79369eb320ff4e
+    SNAP keys_03 54804ee7d0b6d3ad6eeb37ac4d33b598
 
     IN "\Cd\Cd\D3"
     IN "printf \"\\\\e[H\\\\e[J\\\\e[?1h\" && cat -vT\r"
@@ -125,7 +125,7 @@ function CURSOR_KEYS {
     IN "Control-Alt-Shift: \D1"
     IN "\C\A\S\[Up] \C\A\S\[Down] \C\A\S\[Right] \C\A\S\[Left] \C\A\S\[Home] \C\A\S\[End] \n \D2"
 
-    SNAP keys_04 b94f9ce3b7363c0ec559c9de338273ab
+    SNAP keys_04 a8d13fb9a685b2aff3527f9eff639d05
 
     IN "\Cd\Cd\D3"
     IN "printf \"\\\\e[?1l\"\r"
@@ -172,7 +172,7 @@ function KEYPAD_KEYS {
     IN "\C\A\[KP_Begin] \C\A\[KP_Right] \C\A\[KP_Home] \C\A\[KP_Up] \C\A\[KP_Page_Up] "
     IN "\C\A\[KP_Enter] \D2"
 
-    SNAP keys_05 cd54062d5b291a30fd09bea0fb122e86
+    SNAP keys_05 67bf7a3ed9df2b31fa34fc445df31a62
 
     IN "\Cd\Cd\D3"
     IN "printf \"\\\\e[H\\\\e[J\\\\e=\" && cat -vT\r"
@@ -215,7 +215,7 @@ function KEYPAD_KEYS {
     IN "\C\A\[KP_Begin] \C\A\[KP_Right] \C\A\[KP_Home] \C\A\[KP_Up] \C\A\[KP_Page_Up] "
     IN "\C\A\[KP_Enter]    \D2"
 
-    SNAP keys_06 fb590f65c41ca5cf5b49bf17d366059b
+    SNAP keys_06 e2aa7a6762931a6010a1d53462ad6fb9
 
     IN "\Cd\Cd\D3"
     IN "printf \"\\\\e>\"\r"
@@ -230,7 +230,7 @@ function ALT_SENDS_ESC {
     IN "\A0 \A1 \A2 \A3 \A4 \A5 \A6 \A7 \A8 \A9 "
     IN "\C\A2 \C\A3 \C\A5 \C\A6 \C\A7 "
 
-    SNAP keys_07 fa78d452ab0fde532cc24ffcd8bbbf7f
+    SNAP keys_07 546d8a962e89706a647e9b2f43fc1147
 
     IN "\Cd\Cd\D3"
     IN "stty -echo && printf \"\\\\e[H\\\\e[J\\\\e[12l\" && cat -vT\r"
@@ -241,7 +241,7 @@ function ALT_SENDS_ESC {
     IN "\A0 \A1 \A2 \A3 \A4 \A5 \A6 \A7 \A8 \A9 "
     IN "\C\A2 \C\A3 \C\A5 \C\A6 \C\A7 "
 
-    SNAP keys_08 67051d652516e3a0e2198b9e28219c25
+    SNAP keys_08 d9ecd2621843461aafa6b50a93f03809
 
     IN "\Cd\Cd\D3"
     IN "printf \"\\\\e[12h\" && stty echo\r"
@@ -260,7 +260,7 @@ function ALT_SENDS_ESC {
     IN "\C\Aa \C\AA \C\A0 \C\A1 \C\A2 \C\A9 \A# \C\A# "
     IN "\C\A/ \C\A? "
 
-    SNAP keys_09 0b532193433fb81966582cc255fa18a8
+    SNAP keys_09 ce3a130ec3e1899b3c805f40ad426d6e
 
     IN "\Cd\Cd\D3"
     IN "printf \"\\\\e[?1036h\"\r"
@@ -360,7 +360,7 @@ function COMPOSE_CHARS {
     IN " \[Multi_key]!!"
     IN " \[Multi_key]??"
 
-    SNAP keys_10 60554ad0c7ff32768f1536016cafde4d
+    SNAP keys_10 75cf27fa8ae2a62f8ff866427d413dba
 
     IN "\Cd\Cd\D3"
 }
@@ -414,7 +414,7 @@ function SPECIAL_KEYS {
     IN "Alt-Tab: \A\[Tab] \D2"
     IN "Alt-x: \Ax \D2"
 
-    SNAP keys_11 a415b0df0b027d5bb9b66fe6e6902574
+    SNAP keys_11 dda9b8c85108041f553fc84185ffa890
 
     IN "\Cd\Cd\D3"
 
@@ -468,7 +468,7 @@ function SPECIAL_KEYS {
     IN "Alt-Tab: \A\[Tab] \D2"
     IN "Alt-x: \Ax \D2"
 
-    SNAP keys_12 dc0833c6fcfc7a5f6668597158502345
+    SNAP keys_12 02d8619eef9a86555c3bf9f8d596da74
 
     IN "\Cd\Cd\D3"
 
@@ -525,7 +525,7 @@ function SPECIAL_KEYS {
     IN "alt-tab \A\[Tab] \D2"
     IN "alt-x \Ax \D2"
 
-    SNAP keys_13 0a9dd49f6b5754fda882458c3a5be730
+    SNAP keys_13 355f3d843e1aaa78d54df106cabc269d
 
     IN "\Cd\Cd\D3"
 }

@@ -10,13 +10,13 @@ fi
 CHECK_DEPS wraptest
 
 IN "wraptest | head -23 && sleep 2\r"
-SNAP wraptest_01 3210527d9b8d4f947950da94cc93f27f
+SNAP wraptest_01 92217dbf8b571f9a1b3f5d6029f8afc9
 
 IN "wraptest | tail -23 && sleep 2\r"
-SNAP wraptest_02 40f7ea02451cdf255ab0f6f50d202275
+SNAP wraptest_02 3589f0bef5073b0bcb77a132342b5332
 
 IN "source wraptest_inc.sh\r"
-SNAP wraptest_03 61dc7ff7001304ee6810afd95c82ac49
+SNAP wraptest_03 88d4b5e5a139398ccb02e2e002183b7a
 
 IN "\r"
-SNAP wraptest_04 b10b13359004efdd5e5e728953caf3a7
+SNAP wraptest_04 19d1f6c6941ef96c15d6360d45d66ecf

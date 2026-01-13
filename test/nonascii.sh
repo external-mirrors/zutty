@@ -4,10 +4,10 @@ cd $(dirname $0)
 source testbase.sh
 
 IN "source nonascii_inc.sh\r"
-SNAP nonascii_01 1b542851d2a28909ccdaafa1f82815f6
+SNAP nonascii_01 fe6d9c2a60ba632e020379926a1d909b
 
 IN "\r"
-SNAP nonascii_02 d3b46685db03f87300996a736d25483b
+SNAP nonascii_02 c3fa274dbaa37fb4e5b200e857d4003b
 
 IN "\r"
-SNAP nonascii_03 7a2b1d880bd064ce353dd846f2a223f4
+SNAP nonascii_03 e320b5421a7b89f92d0e94ff9e7914bc

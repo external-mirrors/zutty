@@ -4,7 +4,7 @@ cd $(dirname $0)
 source testbase.sh
 
 IN "source truecolor_inc_01.sh\r"
-SNAP truecolor_01 33a31e4d3b9fbe486c27b01764dc1823
+SNAP truecolor_01 db346f8995e7c5bc8117c5ce09fd8140
 
 IN "source truecolor_inc_02.sh\r"
-SNAP truecolor_02 d1c9a0265db41f2aa237c95510565dd2
+SNAP truecolor_02 8941c44d73345199cb7b12e7517a7406
