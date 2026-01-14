@@ -349,7 +349,6 @@ namespace zutty
       int defaultBgPalIx; // if -1, set from opts.bg, else idx into palette256
       int fgPalIx;
       int bgPalIx;
-      bool reverseVideo = false;
       bool hasFocus = false;
 
       unsigned char inputBuf [32 * 1024];

@@ -265,7 +265,7 @@ namespace zutty
    inline void
    Vterm::resetAttrs ()
    {
-      reverseVideo = false;
+      attrs.inverse = 0;
       fg = &attrs.fg;
       bg = &attrs.bg;
 
@@ -564,7 +564,11 @@ namespace zutty
    {
       TRACE_FUN;
       if (esc_IND ())
-         cf->eraseInRow (posY, posX, nColsEff - posX, attrs);
+      {
+         CharVdev::Cell eraseAttrs = attrs;
+         eraseAttrs.inverse = 0;
+         cf->eraseInRow (posY, posX, nColsEff - posX, eraseAttrs);
+      }
    }
 
    inline void
@@ -1559,7 +1563,6 @@ namespace zutty
             attrs.italic = 0;
             attrs.underline = 0;
             attrs.inverse = 0;
-            reverseVideo = false;
             fg = &attrs.fg;
             bg = &attrs.bg;
             fgPalIx = defaultFgPalIx;
@@ -1572,16 +1575,7 @@ namespace zutty
          case 3: attrs.italic = 1; break;
          case 4: attrs.underline = 1; break;
          case 5: /* blink on */ break;
-         case 7:
-            if (!reverseVideo)
-            {
-               fg = &attrs.bg;
-               bg = &attrs.fg;
-               reverseVideo = true;
-               setFgFromPalIx ();
-               setBgFromPalIx ();
-            }
-            break;
+         case 7: attrs.inverse = 1; break;
          case 8: logU << "attr.: concealed" << std::endl; break;
          case 10: attrs.bold = 0; attrs.italic = 0; setFgFromPalIx (); break;
          case 11: attrs.bold = 1; attrs.italic = 0; setFgFromPalIx (); break;
@@ -1594,16 +1588,7 @@ namespace zutty
          case 23: attrs.italic = 0; break;
          case 25: /* blink off */ break;
          case 24: attrs.underline = 0; break;
-         case 27:
-            if (reverseVideo)
-            {
-               fg = &attrs.fg;
-               bg = &attrs.bg;
-               reverseVideo = false;
-               setFgFromPalIx ();
-               setBgFromPalIx ();
-            }
-            break;
+         case 27: attrs.inverse = 0; break;
          case 28: logU << "attr.: revealed (conceal off)" << std::endl; break;
 
          // standard foregrounds (bright if bold)
