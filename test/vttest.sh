@@ -1006,11 +1006,11 @@ function VT_11 {
     SNAP vt_11_06_08_06 b2051bf91da7f0cd878fb8796f7886ae
     IN "\r"
     IN "9\r" # Test screen features with ISO 6429 SGR 22-27 codes
-    SNAP vt_11_06_09_01 e7245556fbb8e83eabb6367afe9e1d4a
+    SNAP vt_11_06_09_01 c978457bbf4e7cc02deb1b41c29f126d
     IN "\r"
-    SNAP vt_11_06_09_02 4beb412613008422f3c399e445148d55
+    SNAP vt_11_06_09_02 72ea678ccf83b78d4fadf8ffa8437c11
     IN "\r"
-    SNAP vt_11_06_09_03 e7245556fbb8e83eabb6367afe9e1d4a
+    SNAP vt_11_06_09_03 c978457bbf4e7cc02deb1b41c29f126d
     IN "\r"
     IN "0\r"
 

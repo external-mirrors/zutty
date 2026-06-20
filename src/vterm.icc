@@ -266,6 +266,8 @@ namespace zutty
    Vterm::resetAttrs ()
    {
       attrs.inverse = 0;
+      attrs.conceal = 0;
+      attrs.crossedout = 0;
       fg = &attrs.fg;
       bg = &attrs.bg;
 
@@ -567,6 +569,8 @@ namespace zutty
       {
          CharVdev::Cell eraseAttrs = attrs;
          eraseAttrs.inverse = 0;
+         eraseAttrs.conceal = 0;
+         eraseAttrs.crossedout = 0;
          cf->eraseInRow (posY, posX, nColsEff - posX, eraseAttrs);
       }
    }
@@ -1563,6 +1567,8 @@ namespace zutty
             attrs.italic = 0;
             attrs.underline = 0;
             attrs.inverse = 0;
+            attrs.conceal = 0;
+            attrs.crossedout = 0;
             fg = &attrs.fg;
             bg = &attrs.bg;
             fgPalIx = defaultFgPalIx;
@@ -1576,7 +1582,8 @@ namespace zutty
          case 4: attrs.underline = 1; break;
          case 5: /* blink on */ break;
          case 7: attrs.inverse = 1; break;
-         case 8: logU << "attr.: concealed" << std::endl; break;
+         case 8: attrs.conceal = 1; break;
+         case 9: attrs.crossedout = 1; break;
          case 10: attrs.bold = 0; attrs.italic = 0; setFgFromPalIx (); break;
          case 11: attrs.bold = 1; attrs.italic = 0; setFgFromPalIx (); break;
          case 12: attrs.bold = 0; attrs.italic = 1; setFgFromPalIx (); break;
@@ -1586,10 +1593,11 @@ namespace zutty
             break;
          case 22: attrs.bold = 0; setFgFromPalIx (); break;
          case 23: attrs.italic = 0; break;
-         case 25: /* blink off */ break;
          case 24: attrs.underline = 0; break;
+         case 25: /* blink off */ break;
          case 27: attrs.inverse = 0; break;
-         case 28: logU << "attr.: revealed (conceal off)" << std::endl; break;
+         case 28: attrs.conceal = 0; break;
+         case 29: attrs.crossedout = 0; break;
 
          // standard foregrounds (bright if bold)
          case 30: case 31: case 32: case 33: case 34: case 35: case 36: case 37:
