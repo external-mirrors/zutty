@@ -235,6 +235,7 @@ namespace zutty
       void hideCursor ();
       void inputGraphicChar (unsigned char ch);
       void placeGraphicChar ();
+      void jumpToPrevTabStop ();
       void jumpToNextTabStop ();
       void setFgFromPalIx ();
       void setBgFromPalIx ();

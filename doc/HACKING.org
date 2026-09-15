@@ -330,6 +330,8 @@ The list of correctness tests (automatically run in sequence by
 - =parser.sh=: Exercise VT parser behaviour in the face of error
   conditions (illegal control sequences) and similar edge cases.
 - =scrollback.sh=: Scrollback (page history) support
+- =tabs.sh=: Setting and clearing tabs; jumping to prev/next tab
+  position.
 - =title.sh=: Setting the window title from within the terminal via
   escape sequences
 - =truecolor.sh=: True color support
