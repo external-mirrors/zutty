@@ -5,6 +5,7 @@ cd $(dirname $0)
 echo "Running all automated tests with --ci-mode $@ ..." && \
     ./keys.sh --ci-mode $@ && \
     ./nonascii.sh --ci-mode $@ && \
+    ./parser.sh --ci-mode $@ && \
     ./scrollback.sh --ci-mode $@ && \
     ./title.sh --ci-mode $@ && \
     ./truecolor.sh --ci-mode $@ && \
