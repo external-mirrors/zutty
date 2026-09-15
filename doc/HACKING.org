@@ -327,6 +327,8 @@ The list of correctness tests (automatically run in sequence by
 - =nonascii.sh=: Test displaying non-ascii (double-width and other
   exotic) characters, based on the Emacs 'hello' file
   (=M-x view-hello-file=)
+- =parser.sh=: Exercise VT parser behaviour in the face of error
+  conditions (illegal control sequences) and similar edge cases.
 - =scrollback.sh=: Scrollback (page history) support
 - =title.sh=: Setting the window title from within the terminal via
   escape sequences

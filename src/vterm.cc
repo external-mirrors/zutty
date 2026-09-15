@@ -979,34 +979,22 @@ namespace zutty
       return nullSpec;
    }
 
-#define IGNORE_SEQUENCE_ON_BAD_PARAMS                  \
-   case ':': case '<': case '=': case '>': case '?':   \
-   setState (InputState::IgnoreSequence);              \
-   break
-
 #define COLLECT_NUMERIC_PARAMS                                        \
    case '0': case '1': case '2': case '3': case '4':                  \
    case '5': case '6': case '7': case '8': case '9':                  \
-      if (inputOps [nInputOps - 1] < 429496704)                       \
+      if (!inputOpsFull)                                              \
       {                                                               \
          inputOps [nInputOps - 1] *= 10;                              \
          inputOps [nInputOps - 1] += ch - '0';                        \
-      }                                                               \
-      else                                                            \
-      {                                                               \
-         logE << "inputOp overflow!" << std::endl;                    \
-         setState (InputState::Normal);                               \
+         if (inputOps [nInputOps - 1] > 65535)                        \
+            inputOps [nInputOps - 1] = 65535;                         \
       }                                                               \
       break;                                                          \
    case ';':                                                          \
       if (nInputOps < maxEscOps)                                      \
          inputOps [nInputOps ++] = 0;                                 \
       else                                                            \
-      {                                                               \
-         logE << "inputOps full, increase maxEscOps (currently: "     \
-              << maxEscOps << ")!" << std::endl;                      \
-         setState (InputState::Normal);                               \
-      }                                                               \
+         inputOpsFull = true;                                         \
       break
 
    void
@@ -1026,50 +1014,73 @@ namespace zutty
       for (readPos = 0; readPos < inputSize; ++readPos)
       {
          const unsigned char& ch = input [readPos];
+
+         if (ch < '\x20')
+         {
+            traceNormalInput ();
+            switch (inputState)
+            {
+            case InputState::OSC:
+               if (ch == '\e' || ch == '\a')
+                  break; // process
+               else
+                  continue; // ignore
+            case InputState::DCS:
+            case InputState::DCS_Esc:
+            case InputState::OSC_Esc:
+               if (ch == '\e')
+                  break; // process
+               else
+                  continue; // ignore
+            default:
+               switch (ch)
+               {
+               case '\e':
+                  inputOps [0] = 0;
+                  nInputOps = 1;
+                  inputOpsFull = false;
+                  lastEscBegin = readPos;
+                  setState (compatLevel == CompatibilityLevel::VT52
+                            ? InputState::Escape_VT52
+                            : InputState::Escape);
+                  break;
+               case '\a': onBell (); break;
+               case '\b': csi_CUB (1); break;
+               case '\t': inp_HT (); break;
+               case '\r': inp_CR (); break;
+               case '\f': case '\v': case '\n': esc_IND_keepState (); break;
+               case '\x0e': charsetState.gl = 1; break;
+               case '\x0f': charsetState.gl = 0; break;
+               case '\x18': case '\x1a': // CAN and SUB interrupts any sequence
+                  setState (InputState::Normal);
+                  break;
+               case '\x00': case '\x01': case '\x02': case '\x03': case '\x04':
+               case '\x05': case '\x06': case '\x10': case '\x11': case '\x12':
+               case '\x13': case '\x14': case '\x15': case '\x16': case '\x17':
+               case '\x19': case '\x1c': case '\x1d': case '\x1e': case '\x1f':
+                  break; // ignore C0 control codes w/o special meaning
+               default:
+                  break;
+               }
+               continue; // ignore
+            }
+         }
+
          switch (inputState)
          {
          case InputState::Normal:
-            switch (ch)
-            {
-            case '\x00': // ignore NUL
-               break;
-            case '\e':
-               setState (compatLevel == CompatibilityLevel::VT52
-                         ? InputState::Escape_VT52
-                         : InputState::Escape);
-               inputOps [0] = 0;
-               nInputOps = 1;
-               lastEscBegin = readPos;
-               break;
-            case '\r': traceNormalInput (); inp_CR (); break;
-            case '\f': // fall through, treat as LineFeed ('\n')
-            case '\v': // fall through, treat as LineFeed ('\n')
-            case '\n': traceNormalInput (); esc_IND (); break;
-            case '\t': traceNormalInput (); inp_HT (); break;
-            case '\b': traceNormalInput (); csi_CUB (); break;
-            case '\a': traceNormalInput (); onBell (); break;
-            case '\x0e': traceNormalInput (); charsetState.gl = 1; break;
-            case '\x0f': traceNormalInput (); charsetState.gl = 0; break;
-            case '\x05': // ENQ - Enquiry
-               traceNormalInput ();
-               break;
-            default: inputGraphicChar (ch);
-            }
+            inputGraphicChar (ch);
             break;
          case InputState::IgnoreSequence:
+            logT << "Ignore: '" << ch << "' ("
+                 << "\\x" << std::hex << std::setw(2) << std::setfill('0')
+                 << (unsigned int)ch << std::dec << ")" << std::endl;
             if (ch >= '\x40' && ch <= '\x7e') // DEC-STD-070: final chars
                setState (InputState::Normal);
             break;
          case InputState::Escape_VT52:
             switch (ch)
             {
-            case '\x18': case '\x1a': // CAN and SUB interrupts ESC sequence
-               setState (InputState::Normal); break;
-            case '\e': // ESC restarts ESC sequence
-               inputOps [0] = 0;
-               nInputOps = 1;
-               lastEscBegin = readPos;
-               break;
             case '=':
                keypadMode = KeypadMode::Application;
                setState (InputState::Normal);
@@ -1100,7 +1111,7 @@ namespace zutty
             case 'J': csi_ED (); break;
             case 'K': csi_EL (); break;
             case 'Y': setState (InputState::VT52_CUP_Arg1); break;
-            case 'Z': writePty ("\e/Z"); break;
+            case 'Z': writePty ("\e/Z"); setState (InputState::Normal); break;
             case 'c': esc_RIS (); break; // allow "reset" command to escape VT52
             default: unhandledInput (ch); break;
             }
@@ -1117,15 +1128,10 @@ namespace zutty
          case InputState::Escape:
             switch (ch)
             {
-            case '\x18': case '\x1a': // CAN and SUB interrupts ESC sequence
-               setState (InputState::Normal);
-               break;
-            case '\e': // ESC restarts ESC sequence
-               inputOps [0] = 0;
-               nInputOps = 1;
-               lastEscBegin = readPos;
-               break;
             case ' ': setState (InputState::Esc_SPC); break;
+            case '!': case '"': case '&': case '\'':
+               setState (InputState::Esc_Ignore);
+               break;
             case '#': setState (InputState::Esc_Hash); break;
             case '%': setState (InputState::Esc_Pct); break;
             case '[': setState (InputState::CSI); break;
@@ -1169,6 +1175,9 @@ namespace zutty
             case '\\': setState (InputState::Normal); break; // ignore lone ST
             default: unhandledInput (ch); break;
             }
+            break;
+         case InputState::Esc_Ignore:
+            unhandledInput (ch);
             break;
          case InputState::Esc_SPC:
             switch (ch)
@@ -1246,7 +1255,6 @@ namespace zutty
             switch (ch)
             {
             COLLECT_NUMERIC_PARAMS;
-            case '\e': setState (InputState::Normal); break;
             case 'A': csi_CUU (); break;
             case 'B': csi_CUD (); break;
             case 'C': csi_CUF (); break;
@@ -1293,21 +1301,6 @@ namespace zutty
                                 ? InputState::CSI_GT
                                 : InputState::IgnoreSequence);
                break;
-            case '\a': break; // ignore
-            case '\b': // undo last character in CSI sequence:
-               if (readPos && input [readPos - 1] == ';')
-                  --nInputOps;
-               else
-                  inputOps [nInputOps - 1] /= 10;
-               break;
-            case '\t': inp_HT (); setState (InputState::CSI); break;
-            case '\r': inp_CR (); setState (InputState::CSI); break;
-            case '\f': // fall through
-            case '\v': esc_IND (); setState (InputState::CSI); break;
-            // N.B. '>' and '?' above, so no IGNORE_SEQUENCE_ON_BAD_PARAMS:
-            case ':': case '<': case '=':
-               setState (InputState::IgnoreSequence);
-               break;
             default: unhandledInput (ch); break;
             }
             break;
@@ -1315,7 +1308,6 @@ namespace zutty
             switch (ch)
             {
             case 'p': csi_DECSTR (); break;
-            IGNORE_SEQUENCE_ON_BAD_PARAMS;
             default: unhandledInput (ch); break;
             }
             break;
@@ -1324,7 +1316,6 @@ namespace zutty
             {
             case '}': csi_DECIC (); break;
             case '~': csi_DECDC (); break;
-            IGNORE_SEQUENCE_ON_BAD_PARAMS;
             default: unhandledInput (ch); break;
             }
             break;
@@ -1332,7 +1323,6 @@ namespace zutty
             switch (ch)
             {
             case 'p': csiq_DECSCL (); break;
-            IGNORE_SEQUENCE_ON_BAD_PARAMS;
             default: unhandledInput (ch); break;
             }
             break;
@@ -1342,7 +1332,6 @@ namespace zutty
             case '@': csi_ecma48_SL (); break;
             case 'A': csi_ecma48_SR (); break;
             case 'q': csi_DECSCUSR (); break;
-            IGNORE_SEQUENCE_ON_BAD_PARAMS;
             default: unhandledInput (ch); break;
             }
             break;
@@ -1352,7 +1341,6 @@ namespace zutty
             COLLECT_NUMERIC_PARAMS;
             case 'c': csi_secDA (); break;
             case 'm': csi_XTMODKEYS (); break;
-            IGNORE_SEQUENCE_ON_BAD_PARAMS;
             default: unhandledInput (ch); break;
             }
             break;
@@ -1360,11 +1348,9 @@ namespace zutty
             switch (ch)
             {
             COLLECT_NUMERIC_PARAMS;
-            case '\e': setState (InputState::Normal); break;
             case 'h': csi_privSM (); break;
             case 'l': csi_privRM (); break;
             case 'm': csi_XTQMODKEYS (); break;
-            IGNORE_SEQUENCE_ON_BAD_PARAMS;
             default: unhandledInput (ch); break;
             }
             break;
@@ -1376,10 +1362,7 @@ namespace zutty
                if (argBuf.size () < 4095)
                   argBuf.push_back (ch);
                else
-               {
                   logE << "DCS argument string overflow" << std::endl;
-                  setState (InputState::Normal);
-               }
                break;
             }
             break;
@@ -1388,8 +1371,13 @@ namespace zutty
             {
             case '\\': handle_DCS (); break;
             default:
-               argBuf.push_back ('\e');
-               argBuf.push_back (ch);
+               if (argBuf.size () < 4094)
+               {
+                  argBuf.push_back ('\e');
+                  argBuf.push_back (ch);
+               }
+               else
+                  logE << "DCS argument string overflow" << std::endl;
                setState (InputState::DCS);
                break;
             }
@@ -1403,10 +1391,7 @@ namespace zutty
                if (argBuf.size () < 4095)
                   argBuf.push_back (ch);
                else
-               {
                   logE << "OSC argument string overflow" << std::endl;
-                  setState (InputState::Normal);
-               }
                break;
             }
             break;
@@ -1415,8 +1400,13 @@ namespace zutty
             {
             case '\\': handle_OSC (); break;
             default:
-               argBuf.push_back ('\e');
-               argBuf.push_back (ch);
+               if (argBuf.size () < 4094)
+               {
+                  argBuf.push_back ('\e');
+                  argBuf.push_back (ch);
+               }
+               else
+                  logE << "OSC argument string overflow" << std::endl;
                setState (InputState::OSC);
                break;
             }
