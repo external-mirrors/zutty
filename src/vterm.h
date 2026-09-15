@@ -170,6 +170,7 @@ namespace zutty
          IgnoreSequence,
          Escape,
          Escape_VT52,
+         Esc_Ignore,
          Esc_SPC,
          Esc_Hash,
          Esc_Pct,
@@ -196,6 +197,7 @@ namespace zutty
          "IgnoreSequence",
          "Escape",
          "Escape_VT52",
+         "Esc_Ignore",
          "Esc_SPC",
          "Esc_Hash",
          "Esc_Pct",
@@ -244,6 +246,7 @@ namespace zutty
 
       void esc_DCS (unsigned char fin); // Designate Character Set
       bool esc_IND ();       // Index
+      bool esc_IND_keepState ();
       void esc_RI ();        // Reverse Index
       void esc_NEL ();       // Next Line
       void esc_BI ();        // Back Index
@@ -261,6 +264,7 @@ namespace zutty
       void csi_CUD ();       // Cursor Down
       void csi_CUF ();       // Cursor Forward
       void csi_CUB ();       // Cursor Backward
+      void csi_CUB (int arg);
       void csi_CNL ();       // Cursor Next Line
       void csi_CPL ();       // Cursor Previous Line
       void csi_CHA ();       // Cursor Character Absolute
@@ -270,6 +274,8 @@ namespace zutty
       void csi_VPR ();       // Line Position Relative
       void csi_CUP ();       // Cursor Position a.k.a. HVP
       void csi_SU ();        // Pan Down / Scroll Up
+      void csi_SU (int arg);
+      void csi_SU_keepState (int arg);
       void csi_SD ();        // Pan Up / Scroll Down
       void csi_CHT ();       // Character Tabulation
       void csi_CBT ();       // Character Backwards Tabulation
@@ -358,9 +364,10 @@ namespace zutty
       int lastStopPos = 0;
 
       InputState inputState = InputState::Normal;
-      constexpr const static size_t maxEscOps = 16;
+      constexpr const static size_t maxEscOps = 32;
       uint32_t inputOps [maxEscOps];
       size_t nInputOps = 0;
+      bool inputOpsFull = false;
       Utf8Decoder utf8dec;
       std::vector <unsigned char> argBuf;
       unsigned char scsDst;  // Select charset / destination designator

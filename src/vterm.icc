@@ -92,23 +92,52 @@ namespace zutty
            << ") in state " << strInputState (inputState)
            << ". Escape sequence so far: "
            << dumpBuffer (inputBuf + lastEscBegin, inputBuf + readPos + 1);
-      setState (InputState::Normal);
+
+      switch (ch)
+      {
+      case '\x05': case '\x0e': case '\x0f':
+         return; // ignore
+      }
+
+      switch (inputState)
+      {
+      case InputState::Escape:
+      case InputState::Escape_VT52:
+      case InputState::Esc_Ignore:
+      case InputState::Esc_SPC:
+      case InputState::Esc_Hash:
+      case InputState::Esc_Pct:
+         if ((ch >= '\x20' && ch <= '\x2f') || (ch == '\x7f'))
+            return; // ignore
+         else
+            setState (InputState::Normal);
+         break;
+      default:
+         if (ch >= '\x40' && ch <= '\x7e') // DEC-STD-070: final chars
+            setState (InputState::Normal);
+         else
+            setState (InputState::IgnoreSequence);
+         break;
+      }
    }
 
    inline void
    Vterm::traceNormalInput ()
    {
    #ifdef DEBUG
-      if (lastNormalBegin < readPos)
+      if (inputState == InputState::Normal)
       {
-         auto dumpbufs = dumpBuffer (inputBuf + lastNormalBegin,
-                                     inputBuf + readPos);
-         if (dumpbufs.length ())
+         if (lastNormalBegin < readPos)
          {
-            logT << "Inserted: " << dumpbufs;
+            auto dumpbufs = dumpBuffer (inputBuf + lastNormalBegin,
+                                        inputBuf + readPos);
+            if (dumpbufs.length ())
+            {
+               logT << "Inserted: " << dumpbufs;
+            }
          }
+         lastNormalBegin = readPos + 1;
       }
-      lastNormalBegin = readPos + 1;
    #endif // DEBUG
    }
 
@@ -686,15 +715,12 @@ namespace zutty
    }
 
    inline bool
-   Vterm::esc_IND ()
+   Vterm::esc_IND_keepState ()
    {
-      TRACE_FUN;
       bool scrolled = false;
       if (posY == marginBottom - 1)
       {
-         nInputOps = 1;
-         inputOps [0] = 1;
-         csi_SU ();
+         csi_SU_keepState (1);
          scrolled = true;
       }
       else if (posY < nRows - 1)
@@ -702,8 +728,16 @@ namespace zutty
          ++posY;
          lastCol = false;
       }
-      setState (InputState::Normal);
       return scrolled;
+   }
+
+   inline bool
+   Vterm::esc_IND ()
+   {
+      TRACE_FUN;
+      bool rv = esc_IND_keepState ();
+      setState (InputState::Normal);
+      return rv;
    }
 
    inline void
@@ -944,10 +978,8 @@ namespace zutty
    }
 
    inline void
-   Vterm::csi_CUB ()
+   Vterm::csi_CUB (int arg)
    {
-      TRACE_FUN;
-      int arg = inputOps [0] ? inputOps [0] : 1;
       if (posX >= hMargin)
          arg = std::min (arg, posX - hMargin);
       else
@@ -956,6 +988,13 @@ namespace zutty
          arg = std::min (arg + 1, (int)posX);
       posX -= arg;
       lastCol = false;
+   }
+
+   inline void
+   Vterm::csi_CUB ()
+   {
+      TRACE_FUN;
+      csi_CUB (inputOps [0] ? inputOps [0] : 1);
       setState (InputState::Normal);
    }
 
@@ -1056,13 +1095,11 @@ namespace zutty
    }
 
    inline void
-   Vterm::csi_SU ()
+   Vterm::csi_SU_keepState (int arg)
    {
-      TRACE_FUN;
-      uint16_t arg = inputOps [0] ? inputOps [0] : 1;
       if (horizMarginMode)
       {
-         arg = std::min ((int)arg, marginBottom - marginTop);
+         arg = std::min (arg, marginBottom - marginTop);
          deleteRows (marginTop, arg);
       }
       else
@@ -1071,7 +1108,20 @@ namespace zutty
          eraseRows (marginBottom - arg, arg);
          lastCol = false;
       }
+   }
+
+   inline void
+   Vterm::csi_SU (int arg)
+   {
+      TRACE_FUN;
+      csi_SU_keepState (arg);
       setState (InputState::Normal);
+   }
+
+   inline void
+   Vterm::csi_SU ()
+   {
+      csi_SU (inputOps [0] ? inputOps [0] : 1);
    }
 
    inline void
