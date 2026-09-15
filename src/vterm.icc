@@ -288,6 +288,9 @@ namespace zutty
       mouseTrk = MouseTrackingState {};
 
       tabStops.clear ();
+      for (int i = 1; i < 250; ++i) // should be plenty
+         tabStops.push_back (8 * i);
+
       cf->getSelection ().clear ();
    }
 
@@ -616,24 +619,23 @@ namespace zutty
    }
 
    inline void
+   Vterm::jumpToPrevTabStop ()
+   {
+      // Set posX to previous tab stop
+      auto ts = std::lower_bound (tabStops.begin (), tabStops.end (), posX);
+      if (ts != tabStops.begin ())
+         posX = * (--ts);
+      else
+         posX = 0;
+      lastCol = false;
+   }
+
+   inline void
    Vterm::jumpToNextTabStop ()
    {
-      if (tabStops.empty ())
-      {
-         // Hard default of 8 chars limited to right margin
-         auto margin = isCursorInsideMargins () ? hMargin : 0;
-         do
-         {
-            posX = ((posX / 8) + 1) * 8;
-         } while (posX < margin);
-         posX = std::min ((int)posX, nColsEff - 1);
-      }
-      else
-      {
-         // Next tabstop column set, or the right margin
-         auto ts = std::lower_bound (tabStops.begin (), tabStops.end (), posX);
-         posX = (ts == tabStops.end ()) ? nCols - 1 : * ts;
-      }
+      // Next tabstop column set, or the right margin
+      auto ts = std::lower_bound (tabStops.begin (), tabStops.end (), posX + 1);
+      posX = std::min ((ts == tabStops.end ()) ? nColsEff - 1 : * ts, nColsEff - 1);
       lastCol = false;
    }
 
@@ -858,8 +860,12 @@ namespace zutty
    Vterm::esc_HTS ()
    {
       TRACE_FUN;
-      tabStops.push_back (posX);
-      std::sort (tabStops.begin (), tabStops.end ());
+      auto it = std::find (tabStops.begin (), tabStops.end (), posX);
+      if (it == tabStops.end ())
+      {
+         tabStops.push_back (posX);
+         std::sort (tabStops.begin (), tabStops.end ());
+      }
       setState (InputState::Normal);
    }
 
@@ -1162,25 +1168,8 @@ namespace zutty
       TRACE_FUN;
       uint16_t arg = inputOps [0] ? inputOps [0] : 1;
       for (uint16_t k = 0; k < arg; ++k)
-      {
-         if (tabStops.empty ())
-         {
-            if (posX > 0 && posX % 8 == 0)
-               posX -= 8;
-            else
-               posX = (posX / 8) * 8;
-         }
-         else
-         {
-            // Set posX to previous tab stop
-            auto ts = std::lower_bound (tabStops.begin (), tabStops.end (), posX);
-            if (ts != tabStops.begin ())
-               posX = * (--ts);
-            else
-               posX = 0;
-         }
-         lastCol = false;
-      }
+         jumpToPrevTabStop ();
+
       setState (InputState::Normal);
    }
 
@@ -1434,7 +1423,7 @@ namespace zutty
       }
          break;
       case 3:
-         tabStops.clear ();
+         tabStops.clear (); // N.B.: do not reinitialize to every-8-cols!
          break;
       default:
          break;
