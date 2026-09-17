@@ -1728,13 +1728,13 @@ namespace zutty
     * 21 - horizontal scrolling
     * 22 - color
     */
-   #define DEVICE_ID "64;1;9;15;21;22c"
+   #define DEVICE_ID "64;1;9;15;21;22"
 
    inline void
    Vterm::csi_priDA ()
    {
       TRACE_FUN;
-      writePty ("\e[?" DEVICE_ID);
+      writePty ("\e[?" DEVICE_ID "c");
       setState (InputState::Normal);
    }
 
@@ -1742,7 +1742,7 @@ namespace zutty
    Vterm::csi_secDA ()
    {
       TRACE_FUN;
-      writePty ("\e[>64;0;0c"); // VT520
+      writePty ("\e[>41;0;0c"); // VT420
       setState (InputState::Normal);
    }
 
@@ -1834,7 +1834,7 @@ namespace zutty
       {
          // DECSCL
          if (compatLevel == CompatibilityLevel::VT400)
-            writePty ("\eP1$r" DEVICE_ID "\e\\");
+            writePty ("\eP1$r64;1\"p\e\\");
       }
       else
       {
