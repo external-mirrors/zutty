@@ -251,6 +251,7 @@ namespace zutty
       hMargin = 0;
       nColsEff = nCols;
 
+      stringState = StringState::Null;
       setState (InputState::Normal);
 
       if (haveOscHandler)
