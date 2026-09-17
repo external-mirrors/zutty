@@ -164,6 +164,13 @@ namespace zutty
       void clearScreen ();
       void fillScreen (uint16_t ch);
 
+      enum class StringState: uint8_t
+      {
+         Null,
+         DCS,
+         OSC
+      };
+
       enum class InputState: uint8_t
       {
          Normal,
@@ -183,9 +190,7 @@ namespace zutty
          CSI_SPC,
          CSI_GT,
          DCS,
-         DCS_Esc,
          OSC,
-         OSC_Esc,
          VT52_CUP_Arg1,
          VT52_CUP_Arg2
       };
@@ -210,9 +215,7 @@ namespace zutty
          "CSI_SPC",
          "CSI_GT",
          "DCS",
-         "DCS_Esc",
          "OSC",
-         "OSC_Esc",
          "VT52_CUP_Arg1",
          "VT52_CUP_Arg2"
          };
@@ -364,6 +367,7 @@ namespace zutty
       int lastNormalBegin = 0;
       int lastStopPos = 0;
 
+      StringState stringState = StringState::Null;
       InputState inputState = InputState::Normal;
       constexpr const static size_t maxEscOps = 32;
       uint32_t inputOps [maxEscOps];

@@ -1018,52 +1018,48 @@ namespace zutty
          if (ch < '\x20')
          {
             traceNormalInput ();
-            switch (inputState)
+            switch (ch)
             {
-            case InputState::OSC:
-               if (ch == '\e' || ch == '\a')
-                  break; // process
-               else
-                  continue; // ignore
-            case InputState::DCS:
-            case InputState::DCS_Esc:
-            case InputState::OSC_Esc:
-               if (ch == '\e')
-                  break; // process
-               else
-                  continue; // ignore
-            default:
-               switch (ch)
+            case '\e':
+               inputOps [0] = 0;
+               nInputOps = 1;
+               inputOpsFull = false;
+               lastEscBegin = readPos;
+               switch (inputState)
                {
-               case '\e':
-                  inputOps [0] = 0;
-                  nInputOps = 1;
-                  inputOpsFull = false;
-                  lastEscBegin = readPos;
-                  setState (compatLevel == CompatibilityLevel::VT52
-                            ? InputState::Escape_VT52
-                            : InputState::Escape);
-                  break;
-               case '\a': onBell (); break;
-               case '\b': csi_CUB (1); break;
-               case '\t': inp_HT (); break;
-               case '\r': inp_CR (); break;
-               case '\f': case '\v': case '\n': esc_IND_keepState (); break;
-               case '\x0e': charsetState.gl = 1; break;
-               case '\x0f': charsetState.gl = 0; break;
-               case '\x18': case '\x1a': // CAN and SUB interrupts any sequence
-                  setState (InputState::Normal);
-                  break;
-               case '\x00': case '\x01': case '\x02': case '\x03': case '\x04':
-               case '\x05': case '\x06': case '\x10': case '\x11': case '\x12':
-               case '\x13': case '\x14': case '\x15': case '\x16': case '\x17':
-               case '\x19': case '\x1c': case '\x1d': case '\x1e': case '\x1f':
-                  break; // ignore C0 control codes w/o special meaning
-               default:
-                  break;
+               case InputState::OSC: stringState = StringState::OSC; break;
+               case InputState::DCS: stringState = StringState::DCS; break;
+               default: stringState = StringState::Null; break;
                }
-               continue; // ignore
+               setState (compatLevel == CompatibilityLevel::VT52
+                         ? InputState::Escape_VT52
+                         : InputState::Escape);
+               break;
+            case '\a':
+               switch (inputState)
+               {
+               case InputState::OSC: handle_OSC (); break;
+               default: onBell (); break;
+               }
+               break;
+            case '\b': csi_CUB (1); break;
+            case '\t': inp_HT (); break;
+            case '\r': inp_CR (); break;
+            case '\f': case '\v': case '\n': esc_IND_keepState (); break;
+            case '\x0e': charsetState.gl = 1; break;
+            case '\x0f': charsetState.gl = 0; break;
+            case '\x18': case '\x1a': // CAN and SUB interrupts any sequence
+               setState (InputState::Normal);
+               break;
+            case '\x00': case '\x01': case '\x02': case '\x03': case '\x04':
+            case '\x05': case '\x06': case '\x10': case '\x11': case '\x12':
+            case '\x13': case '\x14': case '\x15': case '\x16': case '\x17':
+            case '\x19': case '\x1c': case '\x1d': case '\x1e': case '\x1f':
+               break; // ignore C0 control codes w/o special meaning
+            default:
+               break;
             }
+            continue;
          }
 
          switch (inputState)
@@ -1172,7 +1168,16 @@ namespace zutty
             case '}': charsetState.gr = 2; setState (InputState::Normal); break;
             case 'o': charsetState.gl = 3; setState (InputState::Normal); break;
             case '|': charsetState.gr = 3; setState (InputState::Normal); break;
-            case '\\': setState (InputState::Normal); break; // ignore lone ST
+            case '\\': // ST - string terminator
+               switch (stringState)
+               {
+               case StringState::DCS: handle_DCS (); break;
+               case StringState::OSC: handle_OSC (); break;
+               case StringState::Null:
+                  setState (InputState::Normal); // cancel string state
+                  break;
+               }
+               break;
             default: unhandledInput (ch); break;
             }
             break;
@@ -1355,61 +1360,16 @@ namespace zutty
             }
             break;
          case InputState::DCS:
-            switch (ch)
-            {
-            case '\e': setState (InputState::DCS_Esc); break;
-            default:
-               if (argBuf.size () < 4095)
-                  argBuf.push_back (ch);
-               else
-                  logE << "DCS argument string overflow" << std::endl;
-               break;
-            }
-            break;
-         case InputState::DCS_Esc:
-            switch (ch)
-            {
-            case '\\': handle_DCS (); break;
-            default:
-               if (argBuf.size () < 4094)
-               {
-                  argBuf.push_back ('\e');
-                  argBuf.push_back (ch);
-               }
-               else
-                  logE << "DCS argument string overflow" << std::endl;
-               setState (InputState::DCS);
-               break;
-            }
+            if (argBuf.size () < 4095)
+               argBuf.push_back (ch);
+            else
+               logE << "DCS argument string overflow" << std::endl;
             break;
          case InputState::OSC:
-            switch (ch)
-            {
-            case '\a': handle_OSC (); break;
-            case '\e': setState (InputState::OSC_Esc); break;
-            default:
-               if (argBuf.size () < 4095)
-                  argBuf.push_back (ch);
-               else
-                  logE << "OSC argument string overflow" << std::endl;
-               break;
-            }
-            break;
-         case InputState::OSC_Esc:
-            switch (ch)
-            {
-            case '\\': handle_OSC (); break;
-            default:
-               if (argBuf.size () < 4094)
-               {
-                  argBuf.push_back ('\e');
-                  argBuf.push_back (ch);
-               }
-               else
-                  logE << "OSC argument string overflow" << std::endl;
-               setState (InputState::OSC);
-               break;
-            }
+            if (argBuf.size () < 4095)
+               argBuf.push_back (ch);
+            else
+               logE << "OSC argument string overflow" << std::endl;
             break;
          }
       }
