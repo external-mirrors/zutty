@@ -234,7 +234,7 @@ function VT_6 {
     if [ ! -z ${MISSING_SECONDARY_DA} ] ; then
         IN "\r"
     fi
-    SNAP vt_06_05 1a480b1a8a6b5c4595e8da4798f37668
+    SNAP vt_06_05 1592adf3f24ea55a397deedd2f495397
     IN "\r"
     IN "0\r"
 }
