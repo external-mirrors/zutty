@@ -46,6 +46,7 @@ namespace zutty
       , target (XA_UTF8_STRING (dpy))
       , targets (XA_TARGETS (dpy))
       , timestamp (XA_TIMESTAMP (dpy))
+      , timestampProp (XInternAtom (dpy, "_ZUTTY_TIMESTAMP", False))
       , chunkSize (XExtendedMaxRequestSize (dpy)
                    ? XExtendedMaxRequestSize (dpy) >> 2
                    : XMaxRequestSize (dpy) >> 2)
@@ -82,11 +83,15 @@ namespace zutty
    {
       Context& cx = ctx [selection];
 
-      XSetSelectionOwner(dpy, selection, win, time);
+      // N.B.: A non-zero acquisition time marks the selection as owned
+      // (and is reported to requestors of TIMESTAMP).
+      const Time acqTime = time != CurrentTime ? time : getServerTime ();
+
+      XSetSelectionOwner(dpy, selection, win, acqTime);
       if (XGetSelectionOwner (dpy, selection) == win)
       {
          cx.content = content_;
-         cx.acquired = time;
+         cx.acquired = acqTime;
       }
       else
       {
@@ -147,6 +152,26 @@ namespace zutty
       XGetErrorText (dpy, trappedError.error_code, text, sizeof (text));
       logW << "X error while " << what << ": " << text << std::endl;
       return false;
+   }
+
+   // Obtain the current server time via a zero-length append to a property
+   // on our window, as suggested by the ICCCM
+   Time
+   SelectionManager::getServerTime ()
+   {
+      XChangeProperty (dpy, win, timestampProp, XA_INTEGER, 32,
+                       PropModeAppend, nullptr, 0);
+      XEvent event;
+      XIfEvent (dpy, &event,
+                [] (Display*, XEvent* ev, XPointer arg) -> Bool
+                {
+                   auto self = reinterpret_cast <SelectionManager*> (arg);
+                   return ev->type == PropertyNotify &&
+                      ev->xproperty.window == self->win &&
+                      ev->xproperty.atom == self->timestampProp;
+                },
+                reinterpret_cast <XPointer> (this));
+      return event.xproperty.time;
    }
 
    void

@@ -64,6 +64,7 @@ namespace zutty
       const Atom target;
       const Atom targets;
       const Atom timestamp;
+      const Atom timestampProp;
       const size_t chunkSize;
 
       enum class State: uint8_t
@@ -99,6 +100,7 @@ namespace zutty
       void setDeadline (Context& cx);
       void trapErrors ();
       bool untrapErrors (const char* what);
+      Time getServerTime ();
       void handleInboundIncr (Context& cx);
       void handleOutboundIncr (Context& cx);
    };
