@@ -330,11 +330,13 @@ The list of correctness tests (automatically run in sequence by
 - =parser.sh=: Exercise VT parser behaviour in the face of error
   conditions (illegal control sequences) and similar edge cases.
 - =scrollback.sh=: Scrollback (page history) support
+- =sgr.sh=: Text attributes set via SGR (Select Graphic Rendition),
+  including true color support and persistence across partial screen
+  updates
 - =tabs.sh=: Setting and clearing tabs; jumping to prev/next tab
   position.
 - =title.sh=: Setting the window title from within the terminal via
   escape sequences
-- =truecolor.sh=: True color support
 - =utf8.sh=: UTF-8 support (based on the
   [[../test/UTF-8-test.txt][UTF-8 decoder capability and stress test]] by Markus Kuhn)
 - =vttest.sh=: VTTEST screens. Note: This suite depends on a specific

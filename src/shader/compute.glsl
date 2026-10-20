@@ -86,7 +86,7 @@ void main ()
           (idx < selectDamage.x || idx >= selectDamage.y))
          return;
    }
-   vmem.cells [idx].charData = bitfieldInsert (cell.charData, 0u, 23, 1);
+   vmem.cells [idx].charData = bitfieldInsert (cell.charData, 0u, 25, 1);
 
    ivec2 charCode =
       ivec2 (bitfieldExtract (cell.charData, 0, 8),  // Lowest byte

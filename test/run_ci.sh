@@ -7,9 +7,9 @@ echo "Running all automated tests with --ci-mode $@ ..." && \
     ./nonascii.sh --ci-mode $@ && \
     ./parser.sh --ci-mode $@ && \
     ./scrollback.sh --ci-mode $@ && \
+    ./sgr.sh --ci-mode $@ && \
     ./tabs.sh --ci-mode $@ && \
     ./title.sh --ci-mode $@ && \
-    ./truecolor.sh --ci-mode $@ && \
     ./utf8.sh --ci-mode $@ && \
     ./vttest.sh --ci-mode $@ && \
     ./wraptest.sh --ci-mode $@ && \
