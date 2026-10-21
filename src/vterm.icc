@@ -1613,6 +1613,8 @@ namespace zutty
             attrs.crossedout = 0;
             fg = &attrs.fg;
             bg = &attrs.bg;
+            rgb_fg = opts.fg;
+            rgb_bg = opts.bg;
             fgPalIx = defaultFgPalIx;
             setFgFromPalIx ();
             bgPalIx = defaultBgPalIx;
@@ -1668,7 +1670,11 @@ namespace zutty
                break;
             }
             break;
-         case 39: fgPalIx = defaultFgPalIx; setFgFromPalIx (); break;
+         case 39:
+            rgb_fg = opts.fg;
+            fgPalIx = defaultFgPalIx;
+            setFgFromPalIx ();
+            break;
 
          // standard backgrounds
          case 40: case 41: case 42: case 43: case 44: case 45: case 46: case 47:
@@ -1697,7 +1703,11 @@ namespace zutty
                break;
             }
             break;
-         case 49: bgPalIx = defaultBgPalIx; setBgFromPalIx (); break;
+         case 49:
+            rgb_bg = opts.bg;
+            bgPalIx = defaultBgPalIx;
+            setBgFromPalIx ();
+            break;
 
          // bright colored foregrounds
          case 90: case 91: case 92: case 93: case 94: case 95: case 96: case 97:
@@ -1717,8 +1727,6 @@ namespace zutty
             break;
          }
       }
-      rgb_fg = opts.fg;
-      rgb_bg = opts.bg;
       setState (InputState::Normal);
    }
 
