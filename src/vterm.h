@@ -373,6 +373,7 @@ namespace zutty
       uint32_t inputOps [maxEscOps];
       size_t nInputOps = 0;
       bool inputOpsFull = false;
+      bool csiStart = false;
       Utf8Decoder utf8dec;
       std::vector <unsigned char> argBuf;
       unsigned char scsDst;  // Select charset / destination designator

@@ -1130,7 +1130,7 @@ namespace zutty
                break;
             case '#': setState (InputState::Esc_Hash); break;
             case '%': setState (InputState::Esc_Pct); break;
-            case '[': setState (InputState::CSI); break;
+            case '[': csiStart = true; setState (InputState::CSI); break;
             case ']': argBuf.clear (); setState (InputState::OSC); break;
             case '(': case ')': case '*': case '+':
             case '-': case '.': case '/':
@@ -1297,17 +1297,18 @@ namespace zutty
             case '\'': setState (InputState::CSI_Quote); break;
             case '\"': setState (InputState::CSI_DblQuote); break;
             case '!': setState (InputState::CSI_Bang); break;
-            case '?': setState (readPos == lastEscBegin + 2
+            case '?': setState (csiStart
                                 ? InputState::CSI_priv
                                 : InputState::IgnoreSequence);
                break;
             case ' ': setState (InputState::CSI_SPC); break;
-            case '>': setState (readPos == lastEscBegin + 2
+            case '>': setState (csiStart
                                 ? InputState::CSI_GT
                                 : InputState::IgnoreSequence);
                break;
             default: unhandledInput (ch); break;
             }
+            csiStart = false;
             break;
          case InputState::CSI_Bang:
             switch (ch)
