@@ -1562,7 +1562,13 @@ namespace zutty
          oss << "\e[200~";
 
       for (const auto ch: utf8_selection)
+      {
+         // N.B.: Drop ESC so the pasted content cannot terminate the
+         // bracketed paste early by containing ESC [ 201 ~
+         if (bracketedPasteMode && ch == '\e')
+            continue;
          oss << (ch == '\n' ? '\r' : ch);
+      }
 
       if (bracketedPasteMode)
          oss << "\e[201~";

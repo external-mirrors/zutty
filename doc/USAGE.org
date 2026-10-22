@@ -145,6 +145,14 @@ terminal encodes keypresses to the program running inside it, see the
 | Control+Shift+V                                       | Paste the current content of the clipboard selection into the terminal.                                                                                                                                                   |
 |-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 
+If the program running in the terminal has enabled bracketed paste
+mode (as many shells and editors do), pasted content is wrapped in
+special delimiting sequences so that the program can tell it apart
+from typed input. In this mode, any ESC characters are removed from
+the pasted content, so that it cannot prematurely end the paste and
+have the rest of it interpreted as typed input (e.g., commands to
+execute).
+
 ** Environment variables
 
 Zutty sets or alters the below environment variables in the process
