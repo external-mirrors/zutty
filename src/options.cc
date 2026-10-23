@@ -335,6 +335,7 @@ namespace zutty
          bellIsUrgent = getBool ("bellIsUrgent");
          boldColors = getBool ("boldColors");
          login = getBool ("login");
+         osc52Read = getBool ("osc52Read");
          showWraps = getBool ("showWraps");
          quiet = getBool ("quiet");
          verbose = getBool ("verbose");

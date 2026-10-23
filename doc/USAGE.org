@@ -783,6 +783,7 @@ result will look like this:
 :   bellIsAudible     Invoke audible bell (XBell) on ^G (default: true)
 :   bellIsUrgent      Signal bell to WM as Urgency Hint (default: false)
 :   modifyOtherKeys   Key modifier encoding level; 0..2 (default: 1)
+:   osc52Read         Allow reading selections via OSC 52 (default: false)
 :   color0            Palette color 0 (default: #000000)
 :   color1            Palette color 1 (default: #cd0000)
 :   ...
@@ -880,6 +881,22 @@ the ability to generate raw control characters (such as =NUL= via
 Control-2, =ESC= via Control-3, etc).  See the relevant table in the
 [[./KEYS.html#Special key
  combinations][key mapping reference]] for several examples.
+
+*** osc52Read
+
+Programs running in the terminal can set and query the content of the
+X selections (primary and clipboard) via the OSC 52 control sequence.
+The resource =osc52Read= is a boolean controlling whether queries are
+answered. The default value is false (disabled). Setting the selection
+via OSC 52 is always possible.
+
+Queries are disabled by default, because any program writing to the
+terminal could otherwise read the selections without user interaction,
+including programs on remote hosts reached via ssh, or text files
+being displayed. The selections might contain sensitive data, such as
+passwords copied from a password manager. Enable this only if you rely
+on it (e.g., to paste via OSC 52 in a terminal multiplexer or editor
+running on a remote host).
 
 *** Base palette colors
 

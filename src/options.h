@@ -90,6 +90,7 @@ namespace zutty
       {"bellIsAudible",     "true",        "Invoke audible bell (XBell) on ^G"},
       {"bellIsUrgent",      "false",       "Signal bell to WM as Urgency Hint"},
       {"modifyOtherKeys",   "1",           "Key modifier encoding level; 0..2"},
+      {"osc52Read",         "false",       "Allow reading selections via OSC 52"},
       {"color0",            "#000000",     "Palette color 0"},
       {"color1",            "#cd0000",     "Palette color 1"},
       {"color2",            "#00cd00",     "Palette color 2"},
@@ -141,6 +142,7 @@ namespace zutty
       bool boldColors;
       bool glinfo;
       bool login;
+      bool osc52Read;
       bool showWraps;
       bool quiet;
       bool rv;

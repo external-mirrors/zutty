@@ -1127,6 +1127,27 @@ eventLoop (XIC& xic, int ptyFd)
 }
 
 static void
+querySelection (const std::vector <Atom>& targets, size_t idx)
+{
+   if (idx >= targets.size ())
+      return;
+
+   selMgr->getSelection (
+      targets [idx], lastX11EventTime,
+      [targets, idx] (bool success, const std::string& content)
+      {
+         if (success)
+         {
+            std::ostringstream oss;
+            oss << "\e]52;;" << zutty::base64::encode (content) << "\e\\";
+            vt->writePty (oss.str ().c_str ());
+         }
+         else
+            querySelection (targets, idx + 1);
+      });
+}
+
+static void
 handleOsc (int cmd, const std::string& arg)
 {
    switch (cmd)
@@ -1172,26 +1193,11 @@ handleOsc (int cmd, const std::string& arg)
 
       if (pd == "?")
       {
-         // Iterate through targets via callback in continuation-passing style
-         auto it = targets.begin ();
-         auto iend = targets.end ();
-         SelectionManager::PasteCallbackFn getSelectionCb =
-            [&] (bool success, const std::string& content)
-            {
-               if (success)
-               {
-                  std::ostringstream oss;
-                  oss << "\e]52;;" << zutty::base64::encode (content) << "\e\\";
-                  vt->writePty (oss.str ().c_str ());
-               }
-               else if (++it != iend)
-               {
-                  selMgr->getSelection (*it, lastX11EventTime,
-                                        std::move (getSelectionCb));
-               }
-            };
-         if (it != iend)
-            selMgr->getSelection (*it, lastX11EventTime, std::move (getSelectionCb));
+         if (opts.osc52Read)
+            querySelection (targets, 0);
+         else
+            logI << "OSC 52: selection query ignored (osc52Read is false)"
+                 << std::endl;
       }
       else
       {
