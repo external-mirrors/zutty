@@ -1089,7 +1089,7 @@ namespace zutty
          row = std::max ((uint16_t)1, std::min (row, nRows)) - 1;
          break;
       case OriginMode::ScrollingRegion:
-         row = std::max ((uint16_t)1, std::min (row, marginBottom)) - 1;
+         row = std::max (1, std::min ((int)row, marginBottom - marginTop)) - 1;
          row += marginTop;
          break;
       }

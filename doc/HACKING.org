@@ -324,6 +324,7 @@ The list of correctness tests (automatically run in sequence by
 - =keys.sh=: Keyboard input handling (see [[./KEYS.org][Key mapping sequences]] for
   further documentation). Note: This test might fail if your computer
   is configured to use a non-US keyboard.
+- =margins.sh=: Top/bottom margins (scrolling region) and origin mode
 - =nonascii.sh=: Test displaying non-ascii (double-width and other
   exotic) characters, based on the Emacs 'hello' file
   (=M-x view-hello-file=)
