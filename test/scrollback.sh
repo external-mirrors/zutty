@@ -49,4 +49,13 @@ function BASIC_TEST {
     SNAP scrollback_11 07403f604b5e89ccaaceba4f177fdcf9
 }
 
+function SCROLLING_WITHIN_MARGINS {
+    IN "source scrollback_inc_02.sh\r"
+    for x in {0..9} ; do
+        IN "\S\[Page_Up]\S\[Page_Up]\S\[Page_Up]\S\[Page_Up]"
+    done
+    SNAP scrollback_12 3cd3f5970a690fa559923ace3b37d502
+}
+
 BASIC_TEST
+SCROLLING_WITHIN_MARGINS

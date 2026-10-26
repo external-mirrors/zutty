@@ -76,7 +76,8 @@ namespace zutty
          if (scrollHead == marginBottom)
             scrollHead = marginTop;
       }
-      historyRows = std::min (historyRows + count, (int)saveLines);
+      if (!margins)
+         historyRows = std::min (historyRows + count, (int)saveLines);
       damage.add (marginTop * nCols, marginBottom * nCols);
    }
 
@@ -91,7 +92,8 @@ namespace zutty
          else
             scrollHead = marginBottom - 1;
       }
-      historyRows = std::max (0, historyRows - count);
+      if (!margins)
+         historyRows = std::max (0, historyRows - count);
       damage.add (marginTop * nCols, marginBottom * nCols);
    }
 
