@@ -80,6 +80,7 @@ namespace zutty
       };
       std::unordered_map <Atom, Context> ctx;
 
+      std::string atomName (Atom atom) const;
       void handleInboundIncr (Context& cx);
       void handleOutboundIncr (Context& cx);
    };

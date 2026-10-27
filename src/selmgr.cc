@@ -86,6 +86,23 @@ namespace zutty
       return setSelection (dest, time, cx.content);
    }
 
+   std::string
+   SelectionManager::atomName (Atom atom) const
+   {
+      // N.B.: Atoms received in events cannot be trusted, since any client
+      // can send us events. Asking the server for the name of an invalid
+      // atom results in an X error, which makes us exit.
+      if (atom == None) return "None";
+      if (atom == primary) return "PRIMARY";
+      if (atom == clipboard) return "CLIPBOARD";
+      if (atom == incr) return "INCR";
+      if (atom == prop) return "_ZUTTY_SELECTION";
+      if (atom == target) return "UTF8_STRING";
+      if (atom == targets) return "TARGETS";
+      if (atom == timestamp) return "TIMESTAMP";
+      return "atom #" + std::to_string (atom);
+   }
+
    void
    SelectionManager::handleInboundIncr (Context& cx)
    {
@@ -157,7 +174,7 @@ namespace zutty
    SelectionManager::onPropertyNotify (XPropertyEvent& event)
    {
       logT << "onPropertyNotify"
-           << " on '" << XGetAtomName (dpy, event.atom) << "' "
+           << " on '" << atomName (event.atom) << "' "
            << (event.state == PropertyNewValue ? "(NewValue)" : "(Delete)")
            << std::endl;
 
@@ -189,13 +206,13 @@ namespace zutty
    void
    SelectionManager::onSelectionClear (XSelectionClearEvent& event)
    {
-      logT << "onSelectionClear for " << XGetAtomName (dpy, event.selection)
+      logT << "onSelectionClear for " << atomName (event.selection)
            << std::endl;
 
       if (ctx.find (event.selection) == ctx.end ())
       {
          logE << "No selection state for "
-              << XGetAtomName (dpy, event.selection) << std::endl;
+              << atomName (event.selection) << std::endl;
          return;
       }
 
@@ -206,13 +223,13 @@ namespace zutty
    void
    SelectionManager::onSelectionNotify (XSelectionEvent& event)
    {
-      logT << "onSelectionNotify for " << XGetAtomName (dpy, event.selection)
+      logT << "onSelectionNotify for " << atomName (event.selection)
            << std::endl;
 
       if (ctx.find (event.selection) == ctx.end ())
       {
          logE << "No selection state for "
-              << XGetAtomName (dpy, event.selection) << std::endl;
+              << atomName (event.selection) << std::endl;
          return;
       }
 
@@ -277,13 +294,13 @@ namespace zutty
    void
    SelectionManager::onSelectionRequest (XSelectionRequestEvent& event)
    {
-      logT << "onSelectionRequest for " << XGetAtomName (dpy, event.selection)
+      logT << "onSelectionRequest for " << atomName (event.selection)
            << std::endl;
 
       if (ctx.find (event.selection) == ctx.end ())
       {
          logE << "No selection state for "
-              << XGetAtomName (dpy, event.selection) << std::endl;
+              << atomName (event.selection) << std::endl;
          return;
       }
 
@@ -299,7 +316,7 @@ namespace zutty
       if (! cx.acquired)
       {
          logW << "Ignoring selection request for "
-              << XGetAtomName (dpy, event.selection)
+              << atomName (event.selection)
               << " that we do not own."
               << std::endl;
          return;
