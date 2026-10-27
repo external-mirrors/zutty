@@ -75,8 +75,12 @@ def configure(cfg):
         cfg.env.target = 'zutty'
         cfg.env.append_value('CXXFLAGS',
            ['-Werror', '-O3', '-flto'])
-        cfg.env.append_value('LINKFLAGS',
-           ['-flto'])
+        # Parallelize link-time optimization, if supported (GCC >= 10)
+        if cfg.check_cxx(cxxflags=['-flto'], linkflags=['-flto=auto'],
+                         msg='Checking for -flto=auto', mandatory=False):
+            cfg.env.append_value('LINKFLAGS', ['-flto=auto'])
+        else:
+            cfg.env.append_value('LINKFLAGS', ['-flto'])
 
     cfg.check_cfg(package='freetype2', args=['--cflags', '--libs'],
                   uselib_store='FT')
