@@ -59,14 +59,15 @@ namespace
    {
       // If we have just emerged from a directory where fonts were found,
       // time to call it a day.
-      if (tflag == FTW_D &&
+      if (tflag == FTW_DP &&
           sstate.level > 0 && ftwbuf->level == sstate.level - 1 &&
           sstate.regular.size () > 0)
          return 1;
 
       // In a less ideal case, where some candidates were found in this dir,
       // but no regular variant, clear partial results and proceed.
-      if (tflag == FTW_D && sstate.level > 0)
+      if (tflag == FTW_DP &&
+          sstate.level > 0 && ftwbuf->level == sstate.level - 1)
       {
          logT << "Some candidates found but no regular variant; continuing"
               << std::endl;
