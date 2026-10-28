@@ -17,6 +17,8 @@
 
 namespace zutty
 {
+   constexpr const int SelectionManager::Timeout_Ms;
+
    SelectionManager::SelectionManager (Display* dpy_, Window win_)
       : dpy (dpy_)
       , win (win_)
@@ -54,6 +56,7 @@ namespace zutty
       cx.pasteCallback = cb;
       XConvertSelection (dpy, selection, target, prop, win, time);
       cx.state = State::WaitingForSelNotify;
+      setDeadline (cx);
    }
 
    bool
@@ -104,6 +107,67 @@ namespace zutty
    }
 
    void
+   SelectionManager::setDeadline (Context& cx)
+   {
+      cx.deadline = Clock::now () + std::chrono::milliseconds (Timeout_Ms);
+   }
+
+   int
+   SelectionManager::getTimeout () const
+   {
+      int timeout = -1;
+      const auto now = Clock::now ();
+      for (const auto& it: ctx)
+      {
+         const Context& cx = it.second;
+         if (cx.state == State::Idle)
+            continue;
+
+         using std::chrono::duration_cast;
+         using std::chrono::milliseconds;
+         // round up, so we do not wake up before the deadline
+         int ms = std::max (0L, (long) duration_cast <milliseconds> (
+                               cx.deadline - now + milliseconds (1)).count ());
+         if (timeout < 0 || ms < timeout)
+            timeout = ms;
+      }
+      return timeout;
+   }
+
+   void
+   SelectionManager::checkTimeouts ()
+   {
+      const auto now = Clock::now ();
+      for (auto& it: ctx)
+      {
+         Context& cx = it.second;
+         if (cx.state == State::Idle || now < cx.deadline)
+            continue;
+
+         switch (cx.state)
+         {
+         case State::WaitingForSelNotify:
+         case State::ReadingIncr:
+            logW << "Timeout waiting for content of selection "
+                 << atomName (it.first) << std::endl;
+            XDeleteProperty (dpy, win, prop);
+            cx.incoming.clear ();
+            cx.state = State::Idle;
+            cx.pasteCallback (false, "");
+            break;
+         case State::WaitingForIncrAck:
+            // N.B.: Do not touch the requestor window; it might be gone.
+            logW << "Timeout waiting for requestor of selection "
+                 << atomName (it.first) << std::endl;
+            cx.state = State::Idle;
+            break;
+         case State::Idle:
+            break;
+         }
+      }
+   }
+
+   void
    SelectionManager::handleInboundIncr (Context& cx)
    {
       // Receive next chunk of ongoing INCR transfer
@@ -144,6 +208,7 @@ namespace zutty
       cx.incoming.resize (pos + len);
       memcpy (cx.incoming.data () + pos, buffer, len);
       XFree (buffer);
+      setDeadline (cx);
    }
 
    void
@@ -161,6 +226,7 @@ namespace zutty
       else
       {
          logT << "Sending next INCR chunk..." << std::endl;
+         setDeadline (cx);
       }
 
       XChangeProperty (
@@ -266,6 +332,7 @@ namespace zutty
          XDeleteProperty (dpy, win, prop);
          XFlush (dpy);
          cx.state = State::ReadingIncr;
+         setDeadline (cx);
          return;
       }
 
@@ -346,6 +413,7 @@ namespace zutty
          XSelectInput (dpy, cx.cliWin, PropertyChangeMask);
          cx.state = State::WaitingForIncrAck;
          cx.cliTarget = event.target;
+         setDeadline (cx);
       }
       else // normal response (send all data)
       {

@@ -14,6 +14,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -40,7 +41,18 @@ namespace zutty
       void onSelectionNotify (XSelectionEvent& event);
       void onSelectionRequest (XSelectionRequestEvent& event);
 
+      // Milliseconds until the next ongoing transfer times out, or -1 if
+      // there is none (suitable as the timeout argument of poll ())
+      int getTimeout () const;
+      // Abort ongoing transfers whose peer has not responded in time
+      void checkTimeouts ();
+
    private:
+      using Clock = std::chrono::steady_clock;
+
+      // Same as the default selectionTimeout of the X Toolkit
+      constexpr const static int Timeout_Ms = 5000;
+
       Display* dpy;
       Window win;
 
@@ -68,6 +80,7 @@ namespace zutty
          std::string content;
          PasteCallbackFn pasteCallback;
          State state = State::Idle;
+         Clock::time_point deadline; // if state is not Idle
 
          // inbound transfer state
          std::vector <unsigned char> incoming;
@@ -81,6 +94,7 @@ namespace zutty
       std::unordered_map <Atom, Context> ctx;
 
       std::string atomName (Atom atom) const;
+      void setDeadline (Context& cx);
       void handleInboundIncr (Context& cx);
       void handleOutboundIncr (Context& cx);
    };

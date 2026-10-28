@@ -1101,7 +1101,7 @@ eventLoop (XIC& xic, int ptyFd)
    while (1)
    {
       pollset [0].fd = holdPtyIn ? -ptyFd : ptyFd;
-      if (poll (pollset, 2, -1) < 0)
+      if (poll (pollset, 2, selMgr->getTimeout ()) < 0)
       {
          if (errno == EINTR)
             continue;
@@ -1123,6 +1123,8 @@ eventLoop (XIC& xic, int ptyFd)
             if (x11Event (event, xic, ptyFd, destroyed, holdPtyIn))
                return destroyed;
          }
+
+      selMgr->checkTimeouts ();
    }
 }
 
