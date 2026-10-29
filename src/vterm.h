@@ -226,6 +226,7 @@ namespace zutty
 
       void normalizeCursorPos ();
       bool isCursorInsideMargins ();
+      uint16_t originRow (uint16_t row);
       void eraseRow (uint16_t pY);
       void eraseRows (uint16_t startY, uint16_t count);
       void copyRow (uint16_t dstY, uint16_t srcY);

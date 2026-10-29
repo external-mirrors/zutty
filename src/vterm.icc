@@ -1058,9 +1058,7 @@ namespace zutty
    Vterm::csi_VPA ()
    {
       TRACE_FUN;
-      uint16_t row = inputOps [0] ? inputOps [0] : 1;
-      row = std::max ((uint16_t)1, std::min (row, nRows));
-      posY = row - 1;
+      posY = originRow (inputOps [0] ? inputOps [0] : 1);
       lastCol = false;
       setState (InputState::Normal);
    }
@@ -1077,12 +1075,11 @@ namespace zutty
       setState (InputState::Normal);
    }
 
-   inline void
-   Vterm::csi_CUP ()
+   // Convert a (1-based) row parameter to an on-screen row position,
+   // relative to the scrolling region in origin mode
+   inline uint16_t
+   Vterm::originRow (uint16_t row)
    {
-      TRACE_FUN;
-      uint16_t row = inputOps [0] ? inputOps [0] : 1;
-      uint16_t col = (nInputOps > 1 && inputOps [1]) ? inputOps [1] : 1;
       switch (originMode)
       {
       case OriginMode::Absolute:
@@ -1093,10 +1090,19 @@ namespace zutty
          row += marginTop;
          break;
       }
+      return row;
+   }
+
+   inline void
+   Vterm::csi_CUP ()
+   {
+      TRACE_FUN;
+      uint16_t row = inputOps [0] ? inputOps [0] : 1;
+      uint16_t col = (nInputOps > 1 && inputOps [1]) ? inputOps [1] : 1;
       col = std::max ((uint16_t)1, std::min (col, nCols)) - 1;
 
       posX = col;
-      posY = row;
+      posY = originRow (row);
       lastCol = false;
       setState (InputState::Normal);
       logT << "Cursor positioned to (" << posY << "," << posX << ")"
