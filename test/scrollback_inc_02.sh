@@ -7,8 +7,9 @@ for x in {1..30} ; do
     printf "Before margins %2d\n" $x
 done
 
-# Lines scrolling out of a scrolling region do not enter the history
-printf "\e[1;23r\e[23;1H"
+# Lines scrolling out of a scrolling region that does not start at the
+# top of the screen do not enter the history
+printf "\e[2;23r\e[23;1H"
 for x in {1..30} ; do
     printf "Inside margins %2d\n" $x
 done

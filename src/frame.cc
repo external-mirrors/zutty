@@ -29,6 +29,7 @@ namespace zutty
       , marginTop (0)
       , marginBottom (nRows + saveLines)
       , historyRows (0)
+      , historyHead (0)
       , viewOffset (0)
       , margins (false)
       , cells (CharVdev::make_cells (nCols, nRows + saveLines))
@@ -44,6 +45,7 @@ namespace zutty
    {
       viewOffset = 0;
       historyRows = 0;
+      historyHead = 0;
       expose ();
    }
 
@@ -104,6 +106,7 @@ namespace zutty
       nCols = nCols_;
       nRows = nRows_;
       scrollHead = 0;
+      historyHead = 0;
       marginTop = marginTop_ = 0;
       marginBottom_ = nRows;
       marginBottom = nRows + saveLines;
@@ -314,13 +317,14 @@ namespace zutty
    void
    Frame::unwrapCellStorage ()
    {
-      if (scrollHead == marginTop)
+      if (scrollHead == marginTop && historyHead == 0)
          return;
 
       auto newCells = CharVdev::make_cells (nCols, nRows + saveLines);
       copyAllCells (newCells.get ());
       cells = std::move (newCells);
       scrollHead = marginTop;
+      historyHead = 0;
    }
 
    void

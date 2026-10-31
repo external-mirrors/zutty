@@ -959,6 +959,18 @@ The initial status of the above layout is when =scrollHead= equals
 calling =unwrapCellStorage ()= will set up, and is done every time
 prior to the frame being resized, or the top/bottom margins adjusted.
 
+In this layout, area =(0)= is a ringbuffer of its own, holding the
+saved history. Its write pointer is =historyHead=, the offset (counted
+from =nRows=) of the row to be overwritten by the next saved row. The
+most recently saved row is just above it (wrapping around to the end
+of the buffer). If the scrolling region starts at the top of the
+screen (=marginTop= is zero), each row scrolling out of the region is
+copied to the row at =historyHead=, which is then advanced. As in
+xterm, this preserves the output of programs that keep a status line
+at the bottom of the screen. Rows scrolling out of any other scrolling
+region are discarded. Unwrapping the storage also resets =historyHead=
+to zero, putting the most recently saved row at the end of the buffer.
+
 *** Exercising scrollback -- defining what is visible
 
 Given the above defined memory layouts, it is easy to see how the
@@ -970,10 +982,11 @@ up to and including =saveLines= (display the top of history).
 Essentially, when copying frame data into the CharVdev for display,
 =viewOffset= has to be subtracted from the start of the frame
 (=scrollHead= in case of no margins, or 0 if there are margins),
-wrapping around the buffer limits as necessary. Then, the data has to
-be copied from that starting point in order, following the numbering
-of data sections =(0)= through =(4)=, until =nRows= rows have been
-copied.
+wrapping around the buffer limits as necessary. (With margins, history
+rows are taken from area =(0)=, counting backwards from
+=historyHead=.) Then, the data has to be copied from that starting
+point in order, following the numbering of data sections =(0)= through
+=(4)=, until =nRows= rows have been copied.
 
 ** Renderer
 

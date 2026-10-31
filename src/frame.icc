@@ -69,9 +69,14 @@ namespace zutty
    inline void
    Frame::scrollUp (uint16_t count)
    {
+      const bool saveHistory = margins && marginTop == 0 && saveLines;
+      const uint16_t saveCount = std::min (count, marginBottom);
+
       vscrollSelection (-count);
       for (uint16_t k = 0; k < count; ++k)
       {
+         if (saveHistory && k < saveCount)
+            saveHistoryRow ();
          ++scrollHead;
          if (scrollHead == marginBottom)
             scrollHead = marginTop;
@@ -211,6 +216,16 @@ namespace zutty
    }
 
    inline void
+   Frame::saveHistoryRow ()
+   {
+      uint32_t dstIx = (nRows + historyHead) * nCols;
+      copyCells (dstIx, scrollHead * nCols, nCols);
+      if (++historyHead == saveLines)
+         historyHead = 0;
+      historyRows = std::min (historyRows + 1, (int)saveLines);
+   }
+
+   inline void
    Frame::vscrollSelection (int vertOffset)
    {
       if (selection.null ())
@@ -219,7 +234,8 @@ namespace zutty
       int y1 = selection.tl.y + vertOffset;
       int y2 = selection.br.y + vertOffset;
 
-      if ((margins && y1 < marginTop) || y1 < -saveLines ||
+      if ((margins && y1 < marginTop && !(marginTop == 0 && saveLines)) ||
+          y1 < -saveLines ||
           y2 > marginBottom || (y2 == marginBottom && selection.br.x > 0))
       {
          selection.clear ();
@@ -235,8 +251,14 @@ namespace zutty
    {
       if (pY < 0)
       {
-         if (!margins)
-            pY += scrollHead;
+         if (margins)
+         {
+            pY += historyHead;
+            if (pY < 0)
+               pY += saveLines;
+            return nRows + pY;
+         }
+         pY += scrollHead;
          if (pY < 0)
             pY += nRows + saveLines;
          return pY;

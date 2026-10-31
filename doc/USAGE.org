@@ -325,6 +325,12 @@ this will balloon to 10 MiB with 10,000 lines of scrollback.
 Adjusting the column width will have a similar (proportional) effect;
 50,000 lines at a width of 120 columns will consume a whopping 70 MiB!
 
+Lines scrolling off the top of the screen are saved to the history.
+As in xterm, this includes lines scrolling out of a scrolling region
+(as set by a program via DECSTBM) that starts at the top of the
+screen, e.g., above a status line kept at the bottom. Lines scrolling
+out of any other scrolling region are not saved.
+
 Note that the alternate screen buffer does not have scrollback; this
 is by design and in conformance with the relevant specs (but see
 =-altScroll= for enabling synthetic up- and down-arrow key events).

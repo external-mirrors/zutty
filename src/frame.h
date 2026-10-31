@@ -93,6 +93,7 @@ namespace zutty
       uint16_t marginTop;    // current margin top (number of rows above)
       uint16_t marginBottom; // current margin bottom (number of rows above + 1)
       uint16_t historyRows;  // number of history (off-screen) rows with data
+      uint16_t historyHead;  // with margins: offset of next history row to save
       uint16_t viewOffset;   // how many rows above top row does the view start?
       bool margins = false;  // are there (non-default) top/bottom margins set?
 
@@ -136,6 +137,7 @@ namespace zutty
             static_cast <uint8_t> (SelectSnapTo::COUNT));
       }
 
+      void saveHistoryRow ();
       void vscrollSelection (int vertOffset);
       void invalidateSelection (const Rect&& damage);
 

@@ -6,7 +6,7 @@ source testbase.sh
 CHECK_DEPS setxkbmap
 
 function BASIC_TEST {
-    IN "source scrollback_inc.sh\r"
+    IN "source scrollback_inc_01.sh\r"
 
     IN "\S\[Page_Up]\D1"
     SNAP scrollback_01 0f808fe0a89685de4a11cf5631aec583
@@ -54,8 +54,17 @@ function SCROLLING_WITHIN_MARGINS {
     for x in {0..9} ; do
         IN "\S\[Page_Up]\S\[Page_Up]\S\[Page_Up]\S\[Page_Up]"
     done
-    SNAP scrollback_12 3cd3f5970a690fa559923ace3b37d502
+    SNAP scrollback_12 e0f5a4a0fc3ae2ec6fe88332afc8f531
+}
+
+function SCROLLING_REGION_AT_TOP {
+    IN "source scrollback_inc_03.sh\r"
+    for x in {0..9} ; do
+        IN "\S\[Page_Up]\S\[Page_Up]\S\[Page_Up]\S\[Page_Up]"
+    done
+    SNAP scrollback_13 d89fbe500c9eba1e261c552a5059d883
 }
 
 BASIC_TEST
 SCROLLING_WITHIN_MARGINS
+SCROLLING_REGION_AT_TOP
