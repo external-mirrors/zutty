@@ -1109,6 +1109,8 @@ eventLoop (XIC& xic, int ptyFd)
             return false;
       }
 
+      Renderer::FrameLock lk (*renderer);
+
       if (pollset [0].revents & (POLLIN | POLLHUP))
          if (vt->readPty ())
             return false;
@@ -1497,7 +1499,10 @@ main (int argc, char* argv[])
    vt->setBellHandler ([] () { handleBell (); });
 
    // We might not get a ConfigureNotify event when the window first appears:
-   vt->resize (winWidth, winHeight);
+   {
+      Renderer::FrameLock lk (*renderer);
+      vt->resize (winWidth, winHeight);
+   }
 
    bool destroyed = eventLoop (xic, ptyFd);
 

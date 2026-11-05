@@ -29,7 +29,7 @@ namespace zutty
       done = true;
       nextFrame.seqNo = ++seqNo;
       lk.unlock ();
-      cond.notify_one ();
+      cond.notify_all ();
       thr.join ();
    }
 
@@ -40,7 +40,26 @@ namespace zutty
       nextFrame = frame;
       nextFrame.seqNo = ++seqNo;
       lk.unlock ();
-      cond.notify_one ();
+      cond.notify_all ();
+   }
+
+   void
+   Renderer::lockFrame ()
+   {
+      std::unique_lock <std::mutex> lk (mx);
+      // N.B.: let a waiting render thread have its turn first, so it does
+      // not starve while we are processing a continuous stream of input.
+      cond.wait (lk, [&] () { return !frameCopying && !frameWanted; });
+      frameLocked = true;
+   }
+
+   void
+   Renderer::unlockFrame ()
+   {
+      std::unique_lock <std::mutex> lk (mx);
+      frameLocked = false;
+      lk.unlock ();
+      cond.notify_all ();
    }
 
    void
@@ -66,17 +85,43 @@ namespace zutty
          if (done)
             return;
 
-         if (lastFrame.seqNo + 1 != nextFrame.seqNo)
-            delta = false;
-
-         lastFrame = nextFrame;
+         const uint16_t winPx = nextFrame.winPx;
+         const uint16_t winPy = nextFrame.winPy;
          lk.unlock ();
 
-         if (charVdev->resize (lastFrame.winPx, lastFrame.winPy))
+         // N.B.: resizing and mapping might wait for the GPU, so do them
+         // before we would hold up the frame lock.
+         if (charVdev->resize (winPx, winPy))
             delta = false;
 
+         Rect selection;
          {
             CharVdev::Mapping m = charVdev->getMapping ();
+
+            lk.lock ();
+            frameWanted = true;
+            cond.wait (lk, [&] () { return done || !frameLocked; });
+            frameWanted = false;
+
+            if (done)
+               return;
+
+            if (nextFrame.winPx != winPx || nextFrame.winPy != winPy)
+            {
+               // resized in the meantime, start over with the new size
+               lk.unlock ();
+               cond.notify_all ();
+               delta = false;
+               continue;
+            }
+
+            if (lastFrame.seqNo + 1 != nextFrame.seqNo)
+               delta = false;
+
+            lastFrame = nextFrame;
+            frameCopying = true;
+            lk.unlock ();
+
             assert (m.nCols == lastFrame.nCols);
             assert (m.nRows == lastFrame.nRows);
 
@@ -84,13 +129,24 @@ namespace zutty
                lastFrame.deltaCopyCells (m.cells);
             else
                lastFrame.fullCopyCells (m.cells);
+
+            selection = lastFrame.getSnappedSelection ();
+
+            lk.lock ();
+            frameCopying = false;
+            lk.unlock ();
+            cond.notify_all ();
          }
 
          charVdev->setDeltaFrame (delta);
          charVdev->setCursor (lastFrame.getCursor ());
-         charVdev->setSelection (lastFrame.getSnappedSelection ());
+         charVdev->setSelection (selection);
 
-         if (lastFrame.seqNo == nextFrame.seqNo)
+         lk.lock ();
+         const bool outdated = lastFrame.seqNo != nextFrame.seqNo;
+         lk.unlock ();
+
+         if (!outdated)
          {
             charVdev->draw ();
             swapBuffers ();

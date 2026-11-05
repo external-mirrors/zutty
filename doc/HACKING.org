@@ -993,9 +993,24 @@ point in order, following the numbering of data sections =(0)= through
 The task of the Renderer is simple: run the rendering loop in a
 separate thread. This thread executes the CharVdev code, and is
 synchronized on frame updates published by the Vterm. On each update,
-a reference-counted copy of the Frame (using =std::shared_ptr=) is
-made. This ensures that the Frame is decoupled from the Vterm and the
-render thread can keep asynchronously working with it.
+a copy of the Frame is made. This copy is cheap, since the cell
+storage itself is not copied, only a reference-counted pointer to it
+(using =std::shared_ptr=). The Vterm keeps writing into the same cell
+storage while processing further input, so the render thread must not
+read it at the same time.
+
+This is ensured by the frame lock. The main thread holds it (via an
+instance of =Renderer::FrameLock=) while doing anything that might
+modify the frame, that is, while processing input from the pty or
+handling X events. The render thread waits for the lock to be free
+before taking the latest frame update and copying its cells (only the
+ones in view) into the CharVdev, which it then renders without holding
+the lock. If the render thread is waiting for the lock, the main
+thread lets it go first before taking the lock again, so that a
+continuous stream of input cannot hold off rendering. Anything that
+might wait for the GPU (such as mapping the CharVdev cell buffer) is
+done before waiting for the lock, so that the main thread is not held
+up by it.
 
 The rendering loop blocks on the GL program that does the actual
 drawing of the frame content (=CharVdev::draw ()=), and synchronizes

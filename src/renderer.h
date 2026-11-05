@@ -34,16 +34,33 @@ namespace zutty
 
       void update (const Frame& frame);
 
+      // Hold while modifying the cells of frames passed to update ()
+      class FrameLock
+      {
+      public:
+         explicit FrameLock (Renderer& r_): r (r_) { r.lockFrame (); }
+         ~FrameLock () { r.unlockFrame (); }
+
+      private:
+         Renderer& r;
+      };
+
    private:
       std::unique_ptr <CharVdev> charVdev;
       const std::function <void ()> swapBuffers;
       Frame nextFrame;
       uint64_t seqNo = 0;
       bool done = false;
+      bool frameLocked = false;  // cells are being modified (main thread)
+      bool frameCopying = false; // cells are being read (render thread)
+      bool frameWanted = false;  // render thread waiting to read the cells
 
       std::condition_variable cond;
       std::mutex mx;
       std::thread thr;
+
+      void lockFrame ();
+      void unlockFrame ();
 
       void renderThread (const std::function <void ()>& initDisplay,
                          Fontpack* fontpk);
