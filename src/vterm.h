@@ -116,6 +116,11 @@ namespace zutty
                     bool userInput = false);
       int writePty (const char* cstr, bool userInput = false);
 
+      // Data that could not be written right away is queued until the
+      // pty is writable again (see flushPty)
+      bool hasPendingWrite () const { return writePos < writeBuf.size (); }
+      bool flushPty ();
+
       bool readPty ();
 
       const MouseTrackingState& getMouseTrackingState () const;
@@ -363,6 +368,11 @@ namespace zutty
       bool hasFocus = false;
 
       unsigned char inputBuf [32 * 1024];
+      std::string writeBuf;   // pending output to the pty
+      size_t writePos = 0;    // position of unwritten data in writeBuf
+      size_t writeReplies = 0; // bytes of non-user input queued in writeBuf
+      bool writeDropping = false; // dropping replies until writeBuf drains
+      constexpr const static size_t Max_Write_Replies = 1024 * 1024;
       int readPos = 0;
       int lastEscBegin = 0;
       int lastNormalBegin = 0;

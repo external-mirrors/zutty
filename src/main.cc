@@ -1101,6 +1101,7 @@ eventLoop (XIC& xic, int ptyFd)
    while (1)
    {
       pollset [0].fd = holdPtyIn ? -ptyFd : ptyFd;
+      pollset [0].events = POLLIN | (vt->hasPendingWrite () ? POLLOUT : 0);
       if (poll (pollset, 2, selMgr->getTimeout ()) < 0)
       {
          if (errno == EINTR)
@@ -1108,6 +1109,10 @@ eventLoop (XIC& xic, int ptyFd)
          else
             return false;
       }
+
+      if (pollset [0].revents & POLLOUT)
+         if (vt->flushPty ())
+            return false;
 
       Renderer::FrameLock lk (*renderer);
 
