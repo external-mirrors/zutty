@@ -93,8 +93,12 @@ namespace zutty
       };
       std::unordered_map <Atom, Context> ctx;
 
+      XErrorHandler prevErrorHandler = nullptr;
+
       std::string atomName (Atom atom) const;
       void setDeadline (Context& cx);
+      void trapErrors ();
+      bool untrapErrors (const char* what);
       void handleInboundIncr (Context& cx);
       void handleOutboundIncr (Context& cx);
    };

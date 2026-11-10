@@ -15,6 +15,23 @@
 
 #include <X11/Xmu/Atoms.h>
 
+namespace
+{
+   bool haveTrappedError = false;
+   XErrorEvent trappedError;
+
+   int
+   trapError (Display* dpy, XErrorEvent* ev)
+   {
+      if (!haveTrappedError)
+      {
+         trappedError = *ev;
+         haveTrappedError = true;
+      }
+      return 0;
+   }
+}
+
 namespace zutty
 {
    constexpr const int SelectionManager::Timeout_Ms;
@@ -104,6 +121,32 @@ namespace zutty
       if (atom == targets) return "TARGETS";
       if (atom == timestamp) return "TIMESTAMP";
       return "atom #" + std::to_string (atom);
+   }
+
+   // N.B.: Requests to windows of other clients might fail, as the window
+   // might be gone, and any client can send us events naming invalid
+   // windows or atoms. The resulting X errors (reported asynchronously,
+   // hence the syncs) must not reach the default handler, which exits.
+   void
+   SelectionManager::trapErrors ()
+   {
+      XSync (dpy, False);
+      haveTrappedError = false;
+      prevErrorHandler = XSetErrorHandler (trapError);
+   }
+
+   bool
+   SelectionManager::untrapErrors (const char* what)
+   {
+      XSync (dpy, False);
+      XSetErrorHandler (prevErrorHandler);
+      if (!haveTrappedError)
+         return true;
+
+      char text [256];
+      XGetErrorText (dpy, trappedError.error_code, text, sizeof (text));
+      logW << "X error while " << what << ": " << text << std::endl;
+      return false;
    }
 
    void
@@ -217,6 +260,7 @@ namespace zutty
       // Send next chunk of ongoing INCR transfer
       size_t len = std::min (chunkSize, cx.content.length () - cx.cliPos);
 
+      trapErrors ();
       if (!len)
       {
          logT << "Signaling end of INCR transfer..." << std::endl;
@@ -232,8 +276,10 @@ namespace zutty
       XChangeProperty (
          dpy, cx.cliWin, cx.cliProp, cx.cliTarget, 8, PropModeReplace,
          (const unsigned char *) cx.content.data () + cx.cliPos, len);
-      XFlush (dpy);
       cx.cliPos += len;
+
+      if (!untrapErrors ("sending selection data"))
+         cx.state = State::Idle;
    }
 
    void
@@ -393,6 +439,7 @@ namespace zutty
       cx.cliProp = event.property;
       cx.cliPos = 0;
 
+      trapErrors ();
       if (event.target == targets) // response to TARGETS request
       {
          Atom types [3] = { targets, timestamp, target };
@@ -435,8 +482,10 @@ namespace zutty
          res.xselection.target = event.target;
          res.xselection.time = event.time;
          XSendEvent (dpy, event.requestor, 0, 0, &res);
-         XFlush (dpy);
       }
+
+      if (!untrapErrors ("answering selection request"))
+         cx.state = State::Idle;
    }
 
 } // namespace zutty
