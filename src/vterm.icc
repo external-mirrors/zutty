@@ -1112,9 +1112,9 @@ namespace zutty
    inline void
    Vterm::csi_SU_keepState (int arg)
    {
+      arg = std::min (arg, marginBottom - marginTop);
       if (horizMarginMode)
       {
-         arg = std::min (arg, marginBottom - marginTop);
          deleteRows (marginTop, arg);
       }
       else
@@ -1144,9 +1144,9 @@ namespace zutty
    {
       TRACE_FUN;
       uint16_t arg = inputOps [0] ? inputOps [0] : 1;
+      arg = std::min ((int)arg, marginBottom - marginTop);
       if (horizMarginMode)
       {
-         arg = std::min ((int)arg, marginBottom - marginTop);
          insertRows (marginTop, arg);
       }
       else
