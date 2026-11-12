@@ -444,6 +444,14 @@ namespace zutty
              posY >= marginTop && posY < marginBottom;
    }
 
+   // N.B.: The cursor might be to the right of the right margin (e.g., set
+   // via CUP); in that case, the screen edge is the limit for it.
+   inline uint16_t
+   Vterm::rightEdge ()
+   {
+      return posX < nColsEff ? nColsEff : nCols;
+   }
+
    inline void
    Vterm::eraseRow (uint16_t pY)
    {
@@ -580,17 +588,18 @@ namespace zutty
          csi_ICH ();
       }
 
+      const uint16_t right = rightEdge ();
       auto& c = cf->getCell (posY, posX);
       c = attrs;
       c.uc_pt = pt;
 
-      if (w == 2 && posX < nColsEff - 1)
+      if (w == 2 && posX < right - 1)
       {
          c.dwidth = 1;
          cf->getCell (posY, ++posX).dwidth_cont = 1;
       }
 
-      if (posX == nColsEff - 1)
+      if (posX == right - 1)
          lastCol = true;
       else
          ++posX;
@@ -606,7 +615,7 @@ namespace zutty
          eraseAttrs.inverse = 0;
          eraseAttrs.conceal = 0;
          eraseAttrs.crossedout = 0;
-         cf->eraseInRow (posY, posX, nColsEff - posX, eraseAttrs);
+         cf->eraseInRow (posY, posX, rightEdge () - posX, eraseAttrs);
       }
    }
 
@@ -1325,7 +1334,7 @@ namespace zutty
    {
       TRACE_FUN;
       uint32_t arg = inputOps [0] ? inputOps [0] : 1;
-      uint32_t len = nColsEff - posX;
+      uint32_t len = rightEdge () - posX;
       arg = std::min (arg, len);
       cf->eraseInRow (posY, posX, arg, attrs);
       lastCol = false;
