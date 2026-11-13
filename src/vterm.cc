@@ -1449,6 +1449,17 @@ namespace zutty
       redraw ();
    }
 
+   // Grid position of the pointer (at pixel position pX, pY) for selection.
+   // N.B.: The column might be nCols (selecting up to the end of the row).
+   Point
+   Vterm::selectPoint (int pX, int pY)
+   {
+      pX = std::min (std::max (0, pX - opts.border), winPx - 2 * opts.border);
+      pY = std::min (std::max (0, pY - opts.border), winPy - 2 * opts.border);
+      return Point (std::min (pX / glyphPx, (int)nCols),
+                    std::min (pY / glyphPy, nRows - 1));
+   }
+
    void
    Vterm::selectStart (int pX, int pY, bool cycleSnapTo)
    {
@@ -1461,9 +1472,7 @@ namespace zutty
          return;
       }
 
-      pX = std::min (std::max (0, pX - opts.border), winPx - 2 * opts.border);
-      pY = std::min (std::max (0, pY - opts.border), winPy - 2 * opts.border);
-      Point pt (pX / glyphPx, pY / glyphPy);
+      Point pt = selectPoint (pX, pY);
 
       Rect& selection = cf->getSelection ();
       cf->setSelectSnapTo (Frame::SelectSnapTo::Char);
@@ -1482,9 +1491,7 @@ namespace zutty
       logT << "selectExtend (" << pX << "," << pY
            << "), cycleSnapTo=" << cycleSnapTo << std::endl;
 
-      pX = std::min (std::max (0, pX - opts.border), winPx - 2 * opts.border);
-      pY = std::min (std::max (0, pY - opts.border), winPy - 2 * opts.border);
-      Point pt (pX / glyphPx, pY / glyphPy);
+      Point pt = selectPoint (pX, pY);
 
       Rect& selection = cf->getSelection ();
       if (cycleSnapTo)
@@ -1522,9 +1529,7 @@ namespace zutty
    {
       logT << "selectUpdate (" << pX << "," << pY << ")" << std::endl;
 
-      pX = std::min (std::max (0, pX - opts.border), winPx - 2 * opts.border);
-      pY = std::min (std::max (0, pY - opts.border), winPy - 2 * opts.border);
-      Point pt (pX / glyphPx, pY / glyphPy);
+      Point pt = selectPoint (pX, pY);
 
       Rect& selection = cf->getSelection ();
 

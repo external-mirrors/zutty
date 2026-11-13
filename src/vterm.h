@@ -161,6 +161,8 @@ namespace zutty
       const InputSpec * selectInputSpecs ();
       const InputSpec & getInputSpec (VtKey key);
 
+      Point selectPoint (int pX, int pY);
+
       void unhandledInput (unsigned char ch);
       void traceNormalInput ();
       void resetTerminal ();

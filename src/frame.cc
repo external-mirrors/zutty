@@ -162,6 +162,7 @@ namespace zutty
             --ret.tl.x;
 
          cp = getViewRowPtr (ret.br.y);
+         ret.br.x = std::min (ret.br.x, nCols - 1);
          while (ret.br.x > 0 && cp [ret.br.x].uc_pt == ' ')
             --ret.br.x;
          while (ret.br.x < nCols && cp [ret.br.x].uc_pt != ' ')
