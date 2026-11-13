@@ -112,6 +112,7 @@ namespace zutty
       marginBottom = nRows + saveLines;
       margins = false;
       viewOffset = 0;
+      selection.clear ();
       damage.totalCells = nCols * (nRows + saveLines);
       highMemUsageReport ();
    }
