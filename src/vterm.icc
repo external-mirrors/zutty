@@ -1670,8 +1670,11 @@ namespace zutty
             {
             case 5:
                if (k >= nInputOps - 1) break;
-               fgPalIx = inputOps [++k];
-               setFgFromPalIx ();
+               if (inputOps [++k] < 256)
+               {
+                  fgPalIx = inputOps [k];
+                  setFgFromPalIx ();
+               }
                break;
             case 2:
                if (k >= nInputOps - 3) break;
@@ -1703,8 +1706,11 @@ namespace zutty
             {
             case 5:
                if (k >= nInputOps - 1) break;
-               bgPalIx = inputOps [++k];
-               setBgFromPalIx ();
+               if (inputOps [++k] < 256)
+               {
+                  bgPalIx = inputOps [k];
+                  setBgFromPalIx ();
+               }
                break;
             case 2:
                if (k >= nInputOps - 3) break;
