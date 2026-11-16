@@ -21,14 +21,6 @@
 #include "log.h"
 #include "pty.h"
 
-#define _POSIX_C_SOURCE 200809L
-
-#if defined(SOLARIS) /* Solaris 10 */
-#define _XOPEN_SOURCE 600
-#else
-#define _XOPEN_SOURCE 700
-#endif
-
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
