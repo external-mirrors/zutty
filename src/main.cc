@@ -1026,6 +1026,10 @@ x11Event (XEvent& event, XIC& xic, int ptyFd, bool& destroyed, bool& holdPtyIn)
       break;
    case DestroyNotify:
       logT << "DestroyNotify" << std::endl;
+      // N.B.: Any client can send us (synthetic) events
+      if (event.xdestroywindow.send_event ||
+          event.xdestroywindow.window != xWindow)
+         break;
       destroyed = true;
       return true;
    case KeyPress:
