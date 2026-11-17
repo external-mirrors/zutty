@@ -302,7 +302,8 @@ resolveShell (char* progPath)
    }
 
    // go through PATH and try to resolve our program
-   char* PATH = strdup (getenv ("PATH"));
+   const char* envPATH = getenv ("PATH");
+   char* PATH = envPATH ? strdup (envPATH) : nullptr;
    if (PATH)
    {
       char testPath [PATH_MAX+1];
@@ -332,7 +333,7 @@ resolveShell (char* progPath)
 
    // obtain user's shell from /etc/passwd
    auto pwent = getpwuid (getuid ());
-   SHELL = pwent->pw_shell;
+   SHELL = pwent ? pwent->pw_shell : nullptr;
    if (SHELL && stat (SHELL, &statbuf) == 0 && (statbuf.st_mode & S_IXOTH))
    {
       strncpy (progPath, SHELL, PATH_MAX-1);
