@@ -228,6 +228,7 @@ namespace zutty
             logW << "Timeout waiting for requestor of selection "
                  << atomName (it.first) << std::endl;
             cx.state = State::Idle;
+            std::string ().swap (cx.outgoing);
             break;
          case State::Idle:
             break;
@@ -283,7 +284,7 @@ namespace zutty
    SelectionManager::handleOutboundIncr (Context& cx)
    {
       // Send next chunk of ongoing INCR transfer
-      size_t len = std::min (chunkSize, cx.content.length () - cx.cliPos);
+      size_t len = std::min (chunkSize, cx.outgoing.length () - cx.cliPos);
 
       trapErrors ();
       if (!len)
@@ -300,11 +301,14 @@ namespace zutty
 
       XChangeProperty (
          dpy, cx.cliWin, cx.cliProp, cx.cliTarget, 8, PropModeReplace,
-         (const unsigned char *) cx.content.data () + cx.cliPos, len);
+         (const unsigned char *) cx.outgoing.data () + cx.cliPos, len);
       cx.cliPos += len;
 
       if (!untrapErrors ("sending selection data"))
          cx.state = State::Idle;
+
+      if (cx.state == State::Idle)
+         std::string ().swap (cx.outgoing);
    }
 
    void
@@ -485,6 +489,7 @@ namespace zutty
          XSelectInput (dpy, cx.cliWin, PropertyChangeMask);
          cx.state = State::WaitingForIncrAck;
          cx.cliTarget = event.target;
+         cx.outgoing = cx.content;
          setDeadline (cx);
       }
       else // normal response (send all data)
@@ -510,7 +515,10 @@ namespace zutty
       }
 
       if (!untrapErrors ("answering selection request"))
+      {
          cx.state = State::Idle;
+         std::string ().swap (cx.outgoing);
+      }
    }
 
 } // namespace zutty

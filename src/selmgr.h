@@ -87,6 +87,7 @@ namespace zutty
          std::vector <unsigned char> incoming;
 
          // outbound transfer state
+         std::string outgoing; // N.B.: content might change while sending
          size_t cliPos;
          Window cliWin;
          Atom cliProp;
