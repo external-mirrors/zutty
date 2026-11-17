@@ -392,7 +392,12 @@ sighandler (int sig, siginfo_t* info, void* ucontext)
 {
    if (sig == SIGCHLD)
    {
-      waitpid (info->si_pid, nullptr, 0);
+      // N.B.: Must not block: anyone can send us SIGCHLD (e.g., via kill),
+      // with si_pid naming a process that has not exited.
+      int savedErrno = errno;
+      while (waitpid (-1, nullptr, WNOHANG) > 0)
+         ;
+      errno = savedErrno;
    }
 }
 
