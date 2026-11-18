@@ -472,6 +472,10 @@ namespace zutty
       struct SavedCursor_DEC: SavedCursor_SCO
       {
          CharVdev::Cell attrs;
+         int fgPalIx;
+         int bgPalIx;
+         Color rgb_fg;
+         Color rgb_bg;
          OriginMode originMode = OriginMode::Absolute;
          CharsetState charsetState = CharsetState {};
          // NYI: selective erase mode

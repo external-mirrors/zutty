@@ -927,6 +927,10 @@ namespace zutty
       savedCursor_DEC->posY = posY;
       savedCursor_DEC->lastCol = lastCol;
       savedCursor_DEC->attrs = attrs;
+      savedCursor_DEC->fgPalIx = fgPalIx;
+      savedCursor_DEC->bgPalIx = bgPalIx;
+      savedCursor_DEC->rgb_fg = rgb_fg;
+      savedCursor_DEC->rgb_bg = rgb_bg;
       savedCursor_DEC->originMode = originMode;
       savedCursor_DEC->charsetState = charsetState;
       savedCursor_DEC->isSet = true;
@@ -949,6 +953,10 @@ namespace zutty
          normalizeCursorPos ();
          lastCol = savedCursor_DEC->lastCol;
          attrs = savedCursor_DEC->attrs;
+         fgPalIx = savedCursor_DEC->fgPalIx;
+         bgPalIx = savedCursor_DEC->bgPalIx;
+         rgb_fg = savedCursor_DEC->rgb_fg;
+         rgb_bg = savedCursor_DEC->rgb_bg;
          originMode = savedCursor_DEC->originMode;
          charsetState = savedCursor_DEC->charsetState;
          savedCursor_DEC->isSet = false;
@@ -1806,10 +1814,14 @@ namespace zutty
    {
       TRACE_FUN;
 
-      // Save current attrs
+      // Save current attrs (including the colors they are derived from)
       CharVdev::Cell origAttrs = attrs;
       Color* origFg = &attrs.fg;
       Color* origBg = &attrs.bg;
+      int origFgPalIx = fgPalIx;
+      int origBgPalIx = bgPalIx;
+      Color origRgbFg = rgb_fg;
+      Color origRgbBg = rgb_bg;
 
       resetAttrs ();
       fillScreen ('E');
@@ -1818,6 +1830,10 @@ namespace zutty
       fg = origFg;
       bg = origBg;
       attrs = origAttrs;
+      fgPalIx = origFgPalIx;
+      bgPalIx = origBgPalIx;
+      rgb_fg = origRgbFg;
+      rgb_bg = origRgbBg;
 
       setState (InputState::Normal);
    }
