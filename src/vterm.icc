@@ -914,7 +914,6 @@ namespace zutty
          posX = savedCursor_SCO.posX;
          posY = savedCursor_SCO.posY;
          normalizeCursorPos ();
-         savedCursor_SCO.isSet = false;
       }
       setState (InputState::Normal);
    }
@@ -959,7 +958,6 @@ namespace zutty
          rgb_bg = savedCursor_DEC->rgb_bg;
          originMode = savedCursor_DEC->originMode;
          charsetState = savedCursor_DEC->charsetState;
-         savedCursor_DEC->isSet = false;
       }
       setState (InputState::Normal);
    }
