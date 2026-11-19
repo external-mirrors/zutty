@@ -1359,7 +1359,15 @@ main (int argc, char* argv[])
    XSetErrorHandler(handleXError);
    XSetIOErrorHandler(handleXIOError);
 
-   opts.initialize (&argc, argv);
+   try
+   {
+      opts.initialize (&argc, argv);
+   }
+   catch (const std::exception& e)
+   {
+      std::cout << "Error: " << e.what () << std::endl;
+      return -1;
+   }
    if (!opts.display)
    {
       opts.handlePrintOpts ();
@@ -1456,8 +1464,16 @@ main (int argc, char* argv[])
       }
    }
 
-   fontpk = std::make_unique <Fontpack> (opts.fontpath, opts.fontname,
-                                         opts.dwfontname);
+   try
+   {
+      fontpk = std::make_unique <Fontpack> (opts.fontpath, opts.fontname,
+                                            opts.dwfontname);
+   }
+   catch (const std::exception& e)
+   {
+      std::cout << "Error: " << e.what () << std::endl;
+      return -1;
+   }
 
    int winWidth = 2 * opts.border + opts.nCols * fontpk->getPx ();
    int winHeight = 2 * opts.border + opts.nRows * fontpk->getPy ();
