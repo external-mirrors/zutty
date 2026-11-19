@@ -1341,6 +1341,14 @@ main (int argc, char* argv[])
    char* imvalret;
    int i;
 
+   // Make sure we have fds 0 to 2 open even if started without them
+   for (int fd = STDIN_FILENO; fd <= STDERR_FILENO; ++fd)
+   {
+      if (fcntl (fd, F_GETFD) < 0 && errno == EBADF &&
+          open ("/dev/null", O_RDWR) != fd)
+         return -1;
+   }
+
    {
       const char* loc;
       bool warn = false;
