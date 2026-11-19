@@ -26,6 +26,7 @@
 #include "wm_icons.h"
 
 #include <cassert>
+#include <fcntl.h>
 #include <langinfo.h>
 #include <memory>
 #include <poll.h>
@@ -37,6 +38,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 using zutty::Fontpack;
 using zutty::MouseTrackingState;
@@ -429,6 +431,14 @@ setupSignals ()
    }
 }
 
+static void
+setCloseOnExecFrom (int firstFd)
+{
+   const long maxFd = sysconf (_SC_OPEN_MAX);
+   for (long fd = firstFd; fd < maxFd; ++fd)
+      fcntl (fd, F_SETFD, FD_CLOEXEC);
+}
+
 static int
 startShell (const char* execPath, const char* const argv[])
 {
@@ -450,6 +460,8 @@ startShell (const char* execPath, const char* const argv[])
 
       if (setenv ("COLORTERM", "truecolor", 1) < 0)
          SYS_ERROR ("setenv COLORTERM");
+
+      setCloseOnExecFrom (STDERR_FILENO + 1);
 
       if (execvp (execPath, (char * const *) argv) < 0)
          SYS_ERROR ("execvp of ", execPath);
