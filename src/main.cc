@@ -389,6 +389,10 @@ setArgv0 (char* argv0)
    }
 }
 
+static pid_t shellPid = 0;
+static volatile sig_atomic_t shellExited = 0;
+static sigset_t origSigMask;
+
 static void
 sighandler (int sig, siginfo_t* info, void* ucontext)
 {
@@ -397,8 +401,10 @@ sighandler (int sig, siginfo_t* info, void* ucontext)
       // N.B.: Must not block: anyone can send us SIGCHLD (e.g., via kill),
       // with si_pid naming a process that has not exited.
       int savedErrno = errno;
-      while (waitpid (-1, nullptr, WNOHANG) > 0)
-         ;
+      pid_t pid;
+      while ((pid = waitpid (-1, nullptr, WNOHANG)) > 0)
+         if (pid == shellPid)
+            shellExited = 1;
       errno = savedErrno;
    }
 }
@@ -406,8 +412,20 @@ sighandler (int sig, siginfo_t* info, void* ucontext)
 static void
 setupSignals ()
 {
-   // The SIGCHLD handler is required to detect that the child process
-   // has quit; its handler ensures we won't create zombies.
+   // N.B.: SIGCHLD is kept blocked except while waiting in ppoll () within
+   // the event loop, so its arrival reliably interrupts the wait. Do this
+   // before any threads are created, so they inherit the mask and the signal
+   // can only be delivered to the main thread.
+   {
+      sigset_t mask;
+      sigemptyset (&mask);
+      sigaddset (&mask, SIGCHLD);
+      if (sigprocmask (SIG_BLOCK, &mask, &origSigMask) < 0)
+         SYS_ERROR ("can't block SIGCHLD: sigprocmask()");
+   }
+
+   // The SIGCHLD handler detects that the shell has exited, and reaps
+   // children so we won't create zombies.
    {
       struct sigaction sa {};
       sa.sa_sigaction = sighandler;
@@ -463,11 +481,15 @@ startShell (const char* execPath, const char* const argv[])
 
       setCloseOnExecFrom (STDERR_FILENO + 1);
 
+      if (sigprocmask (SIG_SETMASK, &origSigMask, nullptr) < 0)
+         SYS_ERROR ("can't restore signal mask: sigprocmask()");
+
       if (execvp (execPath, (char * const *) argv) < 0)
          SYS_ERROR ("execvp of ", execPath);
    }
    else // parent:
    {
+      shellPid = pid;
       logT << "Shell subprocess started, pid: " << pid << std::endl;
    }
 
@@ -1107,6 +1129,16 @@ x11Event (XEvent& event, XIC& xic, int ptyFd, bool& destroyed, bool& holdPtyIn)
    return false;
 }
 
+static void
+drainPty (int ptyFd)
+{
+   struct pollfd pfd = {ptyFd, POLLIN, 0};
+   Renderer::FrameLock lk (*renderer);
+   while (poll (&pfd, 1, 0) > 0 && (pfd.revents & POLLIN))
+      if (vt->readPty ())
+         break;
+}
+
 static bool
 eventLoop (XIC& xic, int ptyFd)
 {
@@ -1119,12 +1151,31 @@ eventLoop (XIC& xic, int ptyFd)
       {x11Fd, POLLIN, 0},
    };
 
+   sigset_t waitMask = origSigMask;
+   sigdelset (&waitMask, SIGCHLD);
+
    bool holdPtyIn = false;
    while (1)
    {
       pollset [0].fd = holdPtyIn ? -ptyFd : ptyFd;
       pollset [0].events = POLLIN | (vt->hasPendingWrite () ? POLLOUT : 0);
-      if (poll (pollset, 2, selMgr->getTimeout ()) < 0)
+
+      int timeoutMs = selMgr->getTimeout ();
+      struct timespec timeout = {timeoutMs / 1000,
+                                 (timeoutMs % 1000) * 1000000L};
+      int rc = ppoll (pollset, 2, timeoutMs < 0 ? nullptr : &timeout,
+                      &waitMask);
+
+      // N.B.: The shell's exit ends the session even if other processes
+      // (e.g., daemons started from it) still hold the pty open, so we
+      // never see EOF on it.
+      if (shellExited)
+      {
+         drainPty (ptyFd);
+         return false;
+      }
+
+      if (rc < 0)
       {
          if (errno == EINTR)
             continue;
@@ -1349,6 +1400,8 @@ main (int argc, char* argv[])
          return -1;
    }
 
+   setupSignals ();
+
    {
       const char* loc;
       bool warn = false;
@@ -1540,7 +1593,6 @@ main (int argc, char* argv[])
       },
       fontpk.get ());
 
-   setupSignals ();
    int ptyFd = startShell (progPath, shArgv);
    vt = std::make_unique <Vterm> (fontpk->getPx (), fontpk->getPy (),
                                   winWidth, winHeight, ptyFd);
