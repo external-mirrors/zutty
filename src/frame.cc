@@ -50,6 +50,13 @@ namespace zutty
    }
 
    void
+   Frame::getMargins (uint16_t& marginTop_, uint16_t& marginBottom_) const
+   {
+      marginTop_ = marginTop;
+      marginBottom_ = margins ? marginBottom : nRows;
+   }
+
+   void
    Frame::setMargins (uint16_t marginTop_, uint16_t marginBottom_)
    {
       unwrapCellStorage ();
@@ -72,8 +79,7 @@ namespace zutty
 
    void
    Frame::resize (uint16_t winPx_, uint16_t winPy_,
-                  uint16_t nCols_, uint16_t nRows_,
-                  uint16_t& marginTop_, uint16_t& marginBottom_)
+                  uint16_t nCols_, uint16_t nRows_)
    {
       if (winPx == winPx_ && winPy == winPy_)
          return;
@@ -107,8 +113,7 @@ namespace zutty
       nRows = nRows_;
       scrollHead = 0;
       historyHead = 0;
-      marginTop = marginTop_ = 0;
-      marginBottom_ = nRows;
+      marginTop = 0;
       marginBottom = nRows + saveLines;
       margins = false;
       viewOffset = 0;

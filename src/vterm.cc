@@ -663,8 +663,8 @@ namespace zutty
             posY -= nScroll;
          }
 
-         frame_pri.resize (winPx, winPy, nCols_, nRows_,
-                           marginTop, marginBottom);
+         frame_pri.resize (winPx, winPy, nCols_, nRows_);
+         frame_pri.getMargins (marginTop, marginBottom);
 
          if (nRows < nRows_)
          {

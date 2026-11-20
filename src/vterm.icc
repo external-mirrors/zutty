@@ -365,8 +365,8 @@ namespace zutty
       }
       else
       {
-         frame_pri.resize (winPx, winPy, nCols, nRows,
-                           marginTop, marginBottom);
+         frame_pri.resize (winPx, winPy, nCols, nRows);
+         frame_pri.getMargins (marginTop, marginBottom);
          cf = &frame_pri;
          cf->expose ();
          frame_alt.freeCells ();

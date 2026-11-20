@@ -27,10 +27,10 @@ namespace zutty
              uint16_t saveLines_ = 0);
 
       void resize (uint16_t winPx_, uint16_t winPy_,
-                   uint16_t nCols_, uint16_t nRows_,
-                   uint16_t& marginTop_, uint16_t& marginBottom_);
+                   uint16_t nCols_, uint16_t nRows_);
 
       void dropScrollbackHistory ();
+      void getMargins (uint16_t& marginTop_, uint16_t& marginBottom_) const;
       void setMargins (uint16_t marginTop_, uint16_t marginBottom_);
       void resetMargins (uint16_t& marginTop_, uint16_t& marginBottom_);
 
