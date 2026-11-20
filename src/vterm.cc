@@ -658,7 +658,9 @@ namespace zutty
       {
          if (nRows_ < posY + 1)
          {
-            int nScroll = nRows - nRows_;
+            // N.B.: margins reset by resizing anyway; scroll the whole screen
+            cf->resetMargins (marginTop, marginBottom);
+            int nScroll = posY + 1 - nRows_;
             cf->scrollUp (nScroll);
             posY -= nScroll;
          }
