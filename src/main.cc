@@ -39,6 +39,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
 
 using zutty::Fontpack;
 using zutty::MouseTrackingState;
@@ -522,26 +523,26 @@ onKeyPress (XEvent& event, XIC& xic, int ptyFd)
    using Key = VtKey;
    XKeyEvent& xkevt = event.xkey;
 
-   KeySym ks;
-   char buffer [16];
-   const int avail = sizeof (buffer) - 1;
+   KeySym ks = NoSymbol;
+   std::vector <char> buffer (16);
    int nbytes = 0;
 
    if (xic)
    {
       Status status;
-      nbytes = XmbLookupString (xic, &xkevt, buffer, avail, &ks, &status);
-      if (status == XBufferOverflow) {
-         logE << "KeyPress event: buffer size " << sizeof (buffer)
-              << " is too small for XmbLookupString, would have needed "
-              << " a buffer with " << nbytes + 1 << " bytes."
-              << std::endl;
-         return true;
+      nbytes = XmbLookupString (xic, &xkevt, buffer.data (),
+                                buffer.size () - 1, &ks, &status);
+      if (status == XBufferOverflow)
+      {
+         buffer.resize (nbytes + 1);
+         nbytes = XmbLookupString (xic, &xkevt, buffer.data (),
+                                   buffer.size () - 1, &ks, &status);
       }
    }
    else
    {
-      nbytes = XLookupString (&xkevt, buffer, avail, &ks, nullptr);
+      nbytes = XLookupString (&xkevt, buffer.data (), buffer.size () - 1,
+                              &ks, nullptr);
    }
    buffer [nbytes] = '\0';
 
@@ -752,7 +753,7 @@ onKeyPress (XEvent& event, XIC& xic, int ptyFd)
    default:
       if (nbytes > 1)
       {
-         if (vt->writePty (buffer, true) < nbytes)
+         if (vt->writePty (buffer.data (), true) < nbytes)
             return true;
       }
       else
