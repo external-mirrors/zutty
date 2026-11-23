@@ -78,9 +78,44 @@ namespace
          return rv;
       } ();
 
+   struct AliasDesc
+   {
+      const char* option;
+      const char* alias;
+   };
+
+   // Resources commonly used by other programs, taken as fallbacks
+   const std::vector <AliasDesc> aliasTable =
+   {
+      {"bg", "background"},
+      {"cr", "cursorColor"},
+      {"fg", "foreground"},
+   };
+
+   const char*
+   getXDefault (const char* name, const char** outName = nullptr)
+   {
+      if (!dpy)
+         return nullptr;
+      const char* xDefault = XGetDefault (dpy, opts.name, name);
+      if (xDefault)
+         return xDefault;
+      for (const auto& a: aliasTable)
+      {
+         if (strcmp (a.option, name) == 0)
+         {
+            xDefault = XGetDefault (dpy, opts.name, a.alias);
+            if (xDefault && outName)
+               *outName = a.alias;
+            return xDefault;
+         }
+      }
+      return nullptr;
+   }
+
    const char*
    get (const char* name, const char* fallback = nullptr,
-        OptionSource* src = nullptr)
+        OptionSource* src = nullptr, const char** outName = nullptr)
    {
       XrmValue xrmValue;
       char* xrmType;
@@ -96,7 +131,7 @@ namespace
 
       if (XrmGetResource (xrmOptionsDb, buf, opts.name, &xrmType, &xrmValue))
          return withSource (OptionSource::CmdLine, xrmValue.addr);
-      const char* xDefault = dpy ? XGetDefault (dpy, opts.name, name) : nullptr;
+      const char* xDefault = getXDefault (name, outName);
       if (xDefault)
          return withSource (OptionSource::ResourceCfg, xDefault);
       else
@@ -234,11 +269,12 @@ namespace zutty
    void
    Options::getColor (const char* name, zutty::Color& outColor)
    {
-      const char* opt = get (name);
+      const char* srcName = name;
+      const char* opt = get (name, nullptr, nullptr, &srcName);
       if (!opt)
          throw std::runtime_error (std::string ("-") + name +
                                    ": missing value");
-      convColor (name, opt, outColor);
+      convColor (srcName, opt, outColor);
    }
 
    int
@@ -348,9 +384,7 @@ namespace zutty
       {
          std::cout << "  -" << std::left << std::setw (maxw + 3) << e.option;
          std::cout << e.helpDescr;
-         const char* xDefault = dpy
-                              ? XGetDefault (dpy, opts.name, e.option)
-                              : nullptr;
+         const char* xDefault = getXDefault (e.option);
          if (xDefault)
             std::cout << " (configured: " << xDefault << ")";
          else if (e.hardDefault && e.parseType != XrmoptionNoArg)

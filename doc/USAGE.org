@@ -795,6 +795,9 @@ result will look like this:
 :   bellIsUrgent      Signal bell to WM as Urgency Hint (default: false)
 :   modifyOtherKeys   Key modifier encoding level; 0..2 (default: 1)
 :   osc52Read         Allow reading selections via OSC 52 (default: false)
+:   background        Background color (if bg unset)
+:   foreground        Foreground color (if fg unset)
+:   cursorColor       Cursor color (if cr unset)
 :   color0            Palette color 0 (default: #000000)
 :   color1            Palette color 1 (default: #cd0000)
 :   ...
@@ -908,6 +911,23 @@ being displayed. The selections might contain sensitive data, such as
 passwords copied from a password manager. Enable this only if you rely
 on it (e.g., to paste via OSC 52 in a terminal multiplexer or editor
 running on a remote host).
+
+*** Default colors
+
+The resources =background=, =foreground= and =cursorColor= are
+fallbacks for the options =bg=, =fg= and =cr=, respectively. These
+resource names are commonly recognized by other programs (e.g.,
+=xterm=, =urxvt=), so a single set of entries in =~/.Xresources=
+without a program name can configure them all, Zutty included:
+
+: *background:                   #1c1b19
+: *foreground:                   #fce8c3
+: *cursorColor:                  #fbb829
+
+The fallbacks are only used if the respective option is not
+configured via the command line or Xrdb. For example, =*fg= will take
+precedence over =Zutty.foreground=, regardless of the latter being
+more specific.
 
 *** Base palette colors
 
