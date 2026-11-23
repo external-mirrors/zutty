@@ -191,13 +191,13 @@ To view the list of options, issue =zutty -h= (short for =-help=):
 : Options:
 :   -altScroll    Alternate scroll mode
 :   -autoCopy     Sync primary to clipboard
-:   -bg           Background color (default: #000)
+:   -bg           Background color (default: #000000)
 :   -boldColors   Enable bright for bold
 :   -border       Border width in pixels (default: 2)
 :   -cr           Cursor color
 :   -display      Display to connect to
 :   -dwfont       Double-width font to use (default: 18x18ja)
-:   -fg           Foreground color (default: #fff)
+:   -fg           Foreground color (default: #ffffff)
 :   -font         Font to use (default: 9x18)
 :   -fontsize     Font size (default: 16)
 :   -fontpath     Font search path (default: /usr/share/fonts)
@@ -378,17 +378,22 @@ work with whatever final window size it gets. Setting this will in no
 way interfere with your ability to resize Zutty once it is up and
 running.
 
-:   -bg           Background color (default: #000)
-:   -fg           Foreground color (default: #fff)
+:   -bg           Background color (default: #000000)
+:   -fg           Foreground color (default: #ffffff)
 :   -cr           Cursor color
 
-These options accept a hexadecimal RGB or RRGGBB color specification,
-similar to how you can define a color in many other places, e.g., CSS.
-The leading =#= is optional (supported mainly to provide compatibility
-with established conventions); take care to protect it from the shell
-when passing it on the command line. Both lower- and uppercase
-hexadecimal digits (a-f, A-F) are accepted, but note that names (e.g.,
-=red= instead of =#f00=) are /not/ supported.
+These options accept any color specification understood by the X
+server, the same as =xterm= and other X programs do: color names
+(e.g., =red= or =gray50=), =rgb:RR/GG/BB= style specifications, and
+the hexadecimal forms =#RGB=, =#RRGGBB=, =#RRRGGGBBB= and
+=#RRRRGGGGBBBB=. The leading =#= may be omitted from the hexadecimal
+forms; otherwise, take care to protect it from the shell when passing
+it on the command line. These rules apply to all colors configured via
+Zutty's options and resources, including =color0= to =color15=.
+
+Note that the digits of a hexadecimal specification are taken as the
+most significant bits of each channel, so =#fff= is not quite white,
+but equivalent to =#f0f0f0=. Use =#ffffff= (or =white=) instead.
 
 If not explicitly set, the cursor color defaults to the foreground
 color. In case the cursor is placed on a cell with a background color

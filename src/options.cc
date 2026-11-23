@@ -173,47 +173,21 @@ namespace
       outRows = rows;
    }
 
-   uint8_t
-   convHexDigit (const char* name, const char ch)
-   {
-      if (ch >= '0' && ch <= '9')
-         return ch - '0';
-
-      if (ch >= 'a' && ch <= 'f')
-         return ch - 'a' + 10;
-
-      if (ch >= 'A' && ch <= 'F')
-         return ch - 'A' + 10;
-
-      throw std::runtime_error (std::string ("-") + name +
-                                ": illegal hex digit '" + ch +
-                                "'; expected hex RGB color");
-   }
-
    void
    convColor (const char* name, const char* opt, zutty::Color& outColor)
    {
-      const char* val = (opt [0] == '#') ? opt + 1 : opt;
-      switch (strlen (val))
-      {
-      case 3:
-         // N.B.: 17 == (1 << 4) + 1
-         outColor.red = 17 * convHexDigit (name, val [0]);
-         outColor.green =  17 * convHexDigit (name, val [1]);
-         outColor.blue = 17 * convHexDigit (name, val [2]);
-         break;
-      case 6:
-         outColor.red =
-            (convHexDigit (name, val [0]) << 4) + convHexDigit (name, val [1]);
-         outColor.green =
-            (convHexDigit (name, val [2]) << 4) + convHexDigit (name, val [3]);
-         outColor.blue =
-            (convHexDigit (name, val [4]) << 4) + convHexDigit (name, val [5]);
-         break;
-      default:
+      const Colormap cmap = DefaultColormap (dpy, DefaultScreen (dpy));
+      XColor xc;
+      bool ok = XParseColor (dpy, cmap, opt, &xc);
+      if (!ok && opt [0] != '#')
+         ok = XParseColor (dpy, cmap, (std::string ("#") + opt).c_str (), &xc);
+      if (!ok)
          throw std::runtime_error (std::string ("-") + name +
-                                   ": expected hex RGB color");
-      }
+                                   ": invalid color specification '" +
+                                   opt + "'");
+      outColor.red = xc.red >> 8;
+      outColor.green = xc.green >> 8;
+      outColor.blue = xc.blue >> 8;
    }
 
 } // namespace
