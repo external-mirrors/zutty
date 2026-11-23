@@ -464,6 +464,15 @@ namespace zutty
          return;
       }
 
+      // N.B.: We never request our own selections; answering such a request
+      // (any client can send one) would change the event mask of our window.
+      if (event.requestor == win)
+      {
+         logW << "Ignoring selection request naming our own window"
+              << std::endl;
+         return;
+      }
+
       cx.cliWin = event.requestor;
       cx.cliProp = event.property;
       cx.cliPos = 0;
