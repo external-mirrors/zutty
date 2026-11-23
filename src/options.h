@@ -137,6 +137,7 @@ namespace zutty
       Color bg;
       Color cr;
       Color fg;
+      Color palette16 [16];
       bool altScrollMode;
       bool altSendsEscape;
       bool autoCopyMode;
@@ -160,7 +161,7 @@ namespace zutty
       void printUsage () const;
       void printResources () const;
 
-      // getters for resources not automatically parsed by parse ()
+   private:
       bool getBool (const char* name, bool defaultValue = false);
       void getColor (const char* name, zutty::Color& outColor);
       int getInteger (const char* name, int min, int max);

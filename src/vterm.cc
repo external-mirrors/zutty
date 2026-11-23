@@ -418,22 +418,8 @@ namespace
    makePalette256 (Color p[])
    {
       // Standard colors
-      opts.getColor ("color0", p[0]);
-      opts.getColor ("color1", p[1]);
-      opts.getColor ("color2", p[2]);
-      opts.getColor ("color3", p[3]);
-      opts.getColor ("color4", p[4]);
-      opts.getColor ("color5", p[5]);
-      opts.getColor ("color6", p[6]);
-      opts.getColor ("color7", p[7]);
-      opts.getColor ("color8", p[8]);
-      opts.getColor ("color9", p[9]);
-      opts.getColor ("color10", p[10]);
-      opts.getColor ("color11", p[11]);
-      opts.getColor ("color12", p[12]);
-      opts.getColor ("color13", p[13]);
-      opts.getColor ("color14", p[14]);
-      opts.getColor ("color15", p[15]);
+      for (int i = 0; i < 16; ++i)
+         p [i] = opts.palette16 [i];
 
       // 216 colors
       for (uint8_t r = 0; r < 6; ++r)

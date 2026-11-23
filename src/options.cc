@@ -338,6 +338,8 @@ namespace zutty
             getColor ("cr", cr);
          else
             cr = fg;
+         for (int i = 0; i < 16; ++i)
+            getColor (("color" + std::to_string (i)).c_str (), palette16 [i]);
          altScrollMode = getBool ("altScroll");
          altSendsEscape = getBool ("altSendsEscape");
          autoCopyMode = getBool ("autoCopy");
