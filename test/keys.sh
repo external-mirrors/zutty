@@ -172,7 +172,7 @@ function KEYPAD_KEYS {
     IN "\C\A\[KP_Begin] \C\A\[KP_Right] \C\A\[KP_Home] \C\A\[KP_Up] \C\A\[KP_Page_Up] "
     IN "\C\A\[KP_Enter] \D2"
 
-    SNAP keys_05 67bf7a3ed9df2b31fa34fc445df31a62
+    SNAP keys_05 6a12897047f023f779c524483ec2a49a
 
     IN "\Cd\Cd\D3"
     IN "printf \"\\\\e[H\\\\e[J\\\\e=\" && cat -vT\r"
@@ -215,7 +215,7 @@ function KEYPAD_KEYS {
     IN "\C\A\[KP_Begin] \C\A\[KP_Right] \C\A\[KP_Home] \C\A\[KP_Up] \C\A\[KP_Page_Up] "
     IN "\C\A\[KP_Enter]    \D2"
 
-    SNAP keys_06 e2aa7a6762931a6010a1d53462ad6fb9
+    SNAP keys_06 036d77da637adea864e1d3e020db81cd
 
     IN "\Cd\Cd\D3"
     IN "printf \"\\\\e>\"\r"

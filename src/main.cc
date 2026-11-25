@@ -756,7 +756,7 @@ onKeyPress (XEvent& event, XIC& xic, int ptyFd)
          if (vt->writePty (buffer.data (), true) < nbytes)
             return true;
       }
-      else
+      else if (nbytes == 1)
       {
          if (vt->writePty (buffer [0], mod, true) < 1)
             return true;
