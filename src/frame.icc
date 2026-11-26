@@ -35,8 +35,11 @@ namespace zutty
       uint16_t viewOffset_ = std::min (viewOffset + count, (int)historyRows);
       int delta = viewOffset_ - viewOffset;
       cursor.posY += delta;
-      selection.br.y += delta;
-      selection.tl.y += delta;
+      if (!selection.null ())
+      {
+         selection.br.y += delta;
+         selection.tl.y += delta;
+      }
       viewOffset = viewOffset_;
       expose ();
    }
@@ -47,8 +50,11 @@ namespace zutty
       uint16_t viewOffset_ = std::max (0, viewOffset - count);
       int delta = viewOffset_ - viewOffset;
       cursor.posY += delta;
-      selection.br.y += delta;
-      selection.tl.y += delta;
+      if (!selection.null ())
+      {
+         selection.br.y += delta;
+         selection.tl.y += delta;
+      }
       viewOffset = viewOffset_;
       expose ();
    }
@@ -60,8 +66,11 @@ namespace zutty
          return;
 
       cursor.posY -= viewOffset;
-      selection.br.y -= viewOffset;
-      selection.tl.y -= viewOffset;
+      if (!selection.null ())
+      {
+         selection.br.y -= viewOffset;
+         selection.tl.y -= viewOffset;
+      }
       viewOffset = 0;
       expose ();
    }
