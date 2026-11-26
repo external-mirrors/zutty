@@ -826,10 +826,14 @@ mouseProtoSend (MouseTrackingEnc enc, int eventType, unsigned int modstate,
    switch (enc)
    {
    case MouseTrackingEnc::Default:
+      cx = std::min (cx, 255 - 32);
+      cy = std::min (cy, 255 - 32);
       oss << "\e[M" << (char)(32 + cb) << (char)(32 + cx) << (char)(32 + cy);
       vt->writePty (oss.str ().c_str ());
       break;
    case MouseTrackingEnc::UTF8:
+      cx = std::min (cx, 2047 - 32);
+      cy = std::min (cy, 2047 - 32);
       oss << "\e[M";
       using zutty::Utf8Encoder;
       Utf8Encoder::pushUnicode (32 + cb, [&] (char ch) { oss << ch; });
@@ -852,8 +856,13 @@ mouseProtoSend (MouseTrackingEnc enc, int eventType, unsigned int modstate,
 static inline void
 mouseProtoConvCoords (int px, int py, uint16_t& out_cx, uint16_t& out_cy)
 {
-   out_cx = std::max (0, (px - opts.border - 1) / fontpk->getPx ()) + 1;
-   out_cy = std::max (0, (py - opts.border - 1) / fontpk->getPy ()) + 1;
+   // N.B.: While dragging, the pointer might be outside the window
+   const int gx = fontpk->getPx ();
+   const int gy = fontpk->getPy ();
+   const int nCols = std::max (1, (sizeHints.width - 2 * opts.border) / gx);
+   const int nRows = std::max (1, (sizeHints.height - 2 * opts.border) / gy);
+   out_cx = std::min (nCols, std::max (0, (px - opts.border - 1) / gx) + 1);
+   out_cy = std::min (nRows, std::max (0, (py - opts.border - 1) / gy) + 1);
 }
 
 static inline void
