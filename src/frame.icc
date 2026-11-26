@@ -215,10 +215,16 @@ namespace zutty
    inline void
    Frame::invalidateSelection (const Rect&& damage)
    {
-      if (selection.empty ())
+      if (selection.null ())
          return;
 
-      if (selection.br <= damage.tl || damage.br <= selection.tl)
+      // N.B.: Selections snapping to words or lines might be empty, so check
+      // the selected area as snapped.
+      const Rect sel = getSnappedSelection ();
+      if (sel.empty ())
+         return;
+
+      if (sel.br <= damage.tl || damage.br <= sel.tl)
          return;
 
       selection.clear ();
