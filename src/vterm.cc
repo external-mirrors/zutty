@@ -1479,6 +1479,13 @@ namespace zutty
       logT << "selectExtend (" << pX << "," << pY
            << "), cycleSnapTo=" << cycleSnapTo << std::endl;
 
+      if (cf->getSelection ().null ())
+      {
+         // nothing to extend; start a new selection instead
+         selectStart (pX, pY, false);
+         return;
+      }
+
       Point pt = selectPoint (pX, pY);
 
       Rect& selection = cf->getSelection ();
